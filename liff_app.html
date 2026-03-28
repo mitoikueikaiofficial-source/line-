@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LINE連携 | 食数投票システム</title>
+  <!-- LIFF SDK -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      background: linear-gradient(135deg, #06C755 0%, #00a844 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 36px 28px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    .step {
+      background: #f0faf4;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      text-align: left;
+      font-size: 13px;
+      color: #333;
+      line-height: 1.7;
+    }
+
+    .step strong {
+      color: #06C755;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 8px;
+      text-align: left;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 28px;
+      letter-spacing: 12px;
+      text-align: center;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 16px;
+      font-weight: 700;
+      color: #111;
+    }
+
+    input[type="text"]:focus {
+      border-color: #06C755;
+    }
+
+    button#submitBtn {
+      width: 100%;
+      padding: 15px;
+      background: #06C755;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button#submitBtn:hover {
+      background: #05b04a;
+    }
+
+    button#submitBtn:active {
+      transform: scale(0.98);
+    }
+
+    button#submitBtn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    #status {
+      margin-top: 18px;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 22px;
+    }
+
+    #status.success {
+      color: #06C755;
+      font-weight: 700;
+    }
+
+    #status.error {
+      color: #e53e3e;
+      font-weight: 600;
+    }
+
+    #status.loading {
+      color: #888;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid #ccc;
+      border-top-color: #06C755;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <div class="logo">🔗</div>
+    <h1>LINEアカウント連携</h1>
+    <p class="subtitle">食数投票システムとLINEを繋いで<br>通知・投票をより便利に！</p>
+
+    <div class="step">
+      <strong>使い方</strong><br>
+      ①&nbsp;SlackのBotとのDMで「🔗 LINEと連携する」ボタンを押す<br>
+      ②&nbsp;届いた<strong>4桁のコード</strong>を下の枠に入力する<br>
+      ③&nbsp;「連携する」ボタンを押すと完了！
+    </div>
+
+    <label for="otp">Slackで受け取った4桁のコード</label>
+    <input type="text" id="otp" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="0000">
+    <button id="submitBtn" onclick="submitOtp()">連携する</button>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    // TODO: LINE Developersで取得したLIFF IDに書き換えてください
+    const LIFF_ID = "2009629480-rTF4dms1";
+
+    // GASのWebアプリURL（デプロイURL）
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbx23wbGW0ENBzcoO-D_olYrZONNDPBZvCdzrsPch_7_ozpaArKWQG0OauxTDMUl8FHRSA/exec";
+
+    let lineUserId = null;
+
+    async function init() {
+      const status = document.getElementById("status");
+      const btn = document.getElementById("submitBtn");
+
+      try {
+        await liff.init({ liffId: LIFF_ID });
+
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+
+        const profile = await liff.getProfile();
+        lineUserId = profile.userId;
+        status.className = "success";
+        status.textContent = `✅ LINEアカウントを確認しました (${profile.displayName})`;
+      } catch (err) {
+        status.className = "error";
+        status.textContent = "⚠️ LINE情報の取得に失敗しました。LINEアプリ内でこのページを開いてください。";
+        btn.disabled = true;
+      }
+    }
+
+    async function submitOtp() {
+      const otp = document.getElementById("otp").value.trim();
+      const status = document.getElementById("status");
+      const btn = document.getElementById("submitBtn");
+
+      if (!/^\d{4}$/.test(otp)) {
+        status.className = "error";
+        status.textContent = "❌ 4桁の数字を入力してください。";
+        return;
+      }
+
+      if (!lineUserId) {
+        status.className = "error";
+        status.textContent = "❌ LINEアカウントが取得できていません。ページを再読み込みしてください。";
+        return;
+      }
+
+      btn.disabled = true;
+      status.className = "loading";
+      status.innerHTML = '<span class="spinner"></span>連携中...';
+
+      try {
+        const res = await fetch(GAS_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "line_link", otp, lineUserId }),
+          redirect: "follow"
+        });
+
+        const json = await res.json();
+
+        if (json.success) {
+          status.className = "success";
+          status.textContent = "🎉 連携が完了しました！これからLINEで通知が届きます。";
+          document.getElementById("otp").disabled = true;
+        } else {
+          status.className = "error";
+          status.textContent = json.message || "❌ 連携に失敗しました。コードを確認するか、Slackで再発行してください。";
+          btn.disabled = false;
+        }
+      } catch (err) {
+        status.className = "error";
+        status.textContent = "❌ 通信エラーが発生しました。もう一度お試しください。";
+        btn.disabled = false;
+      }
+    }
+
+    init();
+  </script>
+</body>
+
+</html>
