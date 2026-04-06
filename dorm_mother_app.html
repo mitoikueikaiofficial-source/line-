@@ -217,21 +217,18 @@
     }
 
     /**
-     * サーバーと汎用的に通信する関数 (CORS回避のためGETを使用)
+     * サーバーと汎用的に通信する関数 (liff_app.html と同じく POST+JSON を使用)
      */
     async function callGasApi(action, extraParams = {}) {
-      const params = new URLSearchParams();
-      params.append("action", action);
-      for (const key in extraParams) {
-        params.append(key, extraParams[key]);
-      }
+      const body = {
+        action: action,
+        ...extraParams
+      };
 
-      // GETリクエスト用にURLを構築
-      const url = `${GAS_ENDPOINT}?${params.toString()}`;
-
-      const response = await fetch(url, {
-        method: "GET",
-        mode: "cors",
+      const response = await fetch(GAS_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
         redirect: "follow"
       });
 
