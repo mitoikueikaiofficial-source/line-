@@ -68,7 +68,7 @@
       color: #F57C00;
     }
 
-    button#submitBtn {
+    .btn {
       width: 100%;
       padding: 15px;
       background: #F57C00;
@@ -79,39 +79,43 @@
       border-radius: 12px;
       cursor: pointer;
       transition: background 0.2s, transform 0.1s;
+      margin-bottom: 10px;
     }
 
-    button#submitBtn:hover {
+    .btn:hover {
       background: #e65100;
     }
 
-    button#submitBtn:active {
+    .btn:active {
       transform: scale(0.98);
     }
 
-    button#submitBtn:disabled {
+    .btn:disabled {
       background: #ccc;
       cursor: not-allowed;
     }
 
-    #status {
+    .status-box {
       margin-top: 18px;
       font-size: 14px;
       line-height: 1.6;
-      min-height: 22px;
+      padding: 12px;
+      border-radius: 8px;
     }
 
-    #status.success {
+    .status-box.success {
+      background-color: #e8f5e9;
       color: #2e7d32;
       font-weight: 700;
     }
 
-    #status.error {
+    .status-box.error {
+      background-color: #ffebee;
       color: #e53e3e;
       font-weight: 600;
     }
 
-    #status.loading {
+    .status-box.loading {
       color: #888;
     }
 
@@ -139,207 +143,194 @@
   <div class="card">
     <div class="logo">👩‍🍳</div>
     <h1>寮母さん設定</h1>
-    <p class="subtitle" id="pageSubtitle">食数投票の結果をLINEで受け取るための<br>設定手続きを行います。</p>
+    <p class="subtitle" id="pageSubtitle">食数投票の結果をLINEで受け取るための<br>手続きを行います。</p>
 
-    <!-- 1. 未登録 or 他人が登録中の時の表示 -->
+    <!-- 初期表示: LINEログイン確認 -->
+    <div id="initSection">
+      <div id="status" class="status-box">
+        <span class="spinner"></span> LINEを確認中...
+      </div>
+      <button id="startBtn" class="btn" style="display: none; margin-top: 15px;" onclick="startApp()">登録状況を確認する</button>
+    </div>
+
+    <!-- 共通ステータス表示 -->
+    <div id="globalStatus" class="status-box" style="display: none;"></div>
+
+    <!-- 1. 未登録 / 他人が登録中の表示 -->
     <div id="registerSection" style="display: none;">
       <div class="info-box">
-        <strong>ご案内</strong><br>
-        下のボタンを押すと、あなたのLINEアカウントを「寮母さん」として登録します。<br>
-        登録が完了すると、毎週の集計結果がこのアカウント宛に届くようになります。
+        <strong id="registerInfoTitle">ご案内</strong><br>
+        <span id="registerInfoContent">下のボタンを押すと、あなたのLINEアカウントを「寮母さん」として登録します。<br>
+        登録が完了すると、毎週の集計結果がこのアカウント宛に届くようになります。</span>
       </div>
-      <button id="registerBtn" onclick="registerDormMother()">寮母として登録する</button>
+      <button id="registerBtn" class="btn" onclick="registerDormMother()">寮母として登録する</button>
     </div>
 
-    <!-- 2. 自分が登録中の時の表示 -->
+    <!-- 2. 自分が登録中の表示 -->
     <div id="unregisterSection" style="display: none;">
       <div class="info-box">
-        <strong>登録状況</strong><br>
-        現在、あなたが「寮母さん」として登録されています。<br>
-        集計結果の受け取りを停止する場合は、下のボタンで解除してください。
+        <strong id="unregisterInfoTitle">登録状況</strong><br>
+        <span id="unregisterInfoContent">現在、あなたが「寮母さん」として登録されています。<br>
+        集計結果の受け取りを停止する場合は、下のボタンで解除してください。</span>
       </div>
-      <button id="unregisterBtn" onclick="unregisterDormMother()" style="background: #e53e3e;">登録を解除する</button>
+      <button id="unregisterBtn" class="btn" onclick="unregisterDormMother()" style="background: #e53e3e;">登録を解除する</button>
     </div>
-
-    <div id="status"></div>
   </div>
 
   <script>
     /**
      * 設定項目
      */
-    // TODO: 1. LINE Developersで新しく作成した寮母登録用LIFFの「LIFF ID」に書き換えてください
     const LIFF_ID = "2009629480-XsMoiaNI";
-
-    // 既存の liff_app.html で使用している GAS_ENDPOINT と同じものをセットしています
     const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbx23wbGW0ENBzcoO-D_olYrZONNDPBZvCdzrsPch_7_ozpaArKWQG0OauxTDMUl8FHRSA/exec";
 
     let lineUserId = null;
 
+    /**
+     * LIFFの初期化
+     */
     async function init() {
       const status = document.getElementById("status");
-      const pageSubtitle = document.getElementById("pageSubtitle");
-
       try {
         await liff.init({ liffId: LIFF_ID });
-
         if (!liff.isLoggedIn()) {
           liff.login();
           return;
         }
-
         const profile = await liff.getProfile();
         lineUserId = profile.userId;
-        
-        // サーバーから現在の登録状態を取得
-        await checkCurrentStatus();
-
+        status.innerHTML = `<p style="color: #2e7d32; margin-bottom: 10px;">✅ LINEを確認しました</p><strong>${profile.displayName}</strong> さん`;
+        document.getElementById("startBtn").style.display = "block";
       } catch (err) {
         console.error("LIFF Init Error:", err);
-        status.className = "error";
-        status.textContent = "⚠️ LINE情報の取得に失敗しました。LINEアプリ内でこのページを開いてください。 (" + err.message + ")";
+        status.className = "status-box error";
+        status.textContent = "⚠️ LINE情報の取得に失敗しました。 (" + err.message + ")";
       }
     }
 
     /**
-     * 現在の登録状況を確認してUIを切り替える
+     * 開始ボタン押下
+     */
+    async function startApp() {
+      document.getElementById("initSection").style.display = "none";
+      await checkCurrentStatus();
+    }
+
+    /**
+     * サーバーと汎用的に通信する関数
+     */
+    async function callGasApi(action, extraParams = {}) {
+      const params = new URLSearchParams();
+      params.append("action", action);
+      for (const key in extraParams) {
+        params.append(key, extraParams[key]);
+      }
+
+      const response = await fetch(GAS_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params,
+        redirect: "follow"
+      });
+
+      if (!response.ok) throw new Error("HTTP " + response.status);
+
+      const text = await response.text();
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        throw new Error("JSON Parse Error: " + text.substring(0, 100));
+      }
+    }
+
+    /**
+     * 登録状況の確認
      */
     async function checkCurrentStatus() {
-      const status = document.getElementById("status");
+      const status = document.getElementById("globalStatus");
       const registerSection = document.getElementById("registerSection");
       const unregisterSection = document.getElementById("unregisterSection");
       
-      status.className = "loading";
-      status.innerHTML = '<span class="spinner"></span>状態を確認中...';
+      status.style.display = "block";
+      status.className = "status-box loading";
+      status.innerHTML = '<span class="spinner"></span>サーバーに接続中...';
 
       try {
-        const params = new URLSearchParams();
-        params.append("action", "get_dorm_mother_status");
-
-        const response = await fetch(GAS_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: params,
-          redirect: "follow"
-        });
-
-        if (!response.ok) {
-          throw new Error("HTTP error! status: " + response.status);
-        }
-
-        const json = await response.json();
-        console.log("Status check result:", json);
-        
+        const json = await callGasApi("get_dorm_mother_status");
         if (json.success) {
-          status.innerHTML = "";
+          status.style.display = "none";
           if (json.dormMotherId === lineUserId) {
-            // 自分が登録中
             registerSection.style.display = "none";
             unregisterSection.style.display = "block";
           } else if (json.dormMotherId) {
-            // 他人が登録中
             registerSection.style.display = "block";
             unregisterSection.style.display = "none";
-            document.querySelector("#registerSection strong").textContent = "引き継ぎのご案内";
-            document.querySelector("#registerSection div").innerHTML = "<strong>引き継ぎのご案内</strong><br>現在、別のLINEアカウントが登録されています。<br>あなたが新しい寮母さんとして登録する場合は、下のボタンを押してください。";
+            document.getElementById("registerInfoTitle").textContent = "引き継ぎのご案内";
+            document.getElementById("registerInfoContent").innerHTML = "現在、別のアカウントが登録されています。<br>あなたが新しく寮母さんになる場合は、下から登録を上書きしてください。";
             document.getElementById("registerBtn").textContent = "寮母登録を引き継ぐ";
           } else {
-            // 未登録
             registerSection.style.display = "block";
             unregisterSection.style.display = "none";
+            document.getElementById("registerInfoTitle").textContent = "ご案内";
+            document.getElementById("registerInfoContent").innerHTML = "下のボタンを押し、あなたのLINEアカウントを「寮母さん」として登録します。";
             document.getElementById("registerBtn").textContent = "寮母として登録する";
           }
         }
       } catch (err) {
-        console.error("CheckStatus Error:", err);
-        status.className = "error";
-        status.textContent = "❌ 状態の取得に失敗しました。 (" + err.message + ")";
+        status.className = "status-box error";
+        status.textContent = "❌ 接続失敗: " + err.message;
       }
     }
 
+    /**
+     * 登録実行
+     */
     async function registerDormMother() {
-      const status = document.getElementById("status");
-      const btn = document.getElementById("registerBtn");
-
-      if (!confirm("あなたをこのシステムの「寮母さん」として登録します。よろしいですか？\n(以前の登録は自動的に上書きされます)")) {
-        return;
-      }
-
-      btn.disabled = true;
-      status.className = "loading";
+      if (!confirm("あなたを「寮母さん」として登録します。よろしいですか？")) return;
+      const status = document.getElementById("globalStatus");
+      status.style.display = "block";
+      status.className = "status-box loading";
       status.innerHTML = '<span class="spinner"></span>登録処理中...';
-
       try {
-        const params = new URLSearchParams();
-        params.append("action", "set_dorm_mother");
-        params.append("lineUserId", lineUserId);
-
-        const response = await fetch(GAS_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: params,
-          redirect: "follow"
-        });
-
-        const json = await response.json();
-
+        const json = await callGasApi("set_dorm_mother", { lineUserId: lineUserId });
         if (json.success) {
-          status.className = "success";
-          status.textContent = "🎉 登録が完了しました！";
-          await checkCurrentStatus();
+          status.className = "status-box success";
+          status.textContent = "🎉 登録完了！通知が届くようになります。";
+          setTimeout(checkCurrentStatus, 1500);
         } else {
-          status.className = "error";
-          status.textContent = "❌ 登録に失敗しました。";
-          btn.disabled = false;
+          throw new Error(json.message);
         }
       } catch (err) {
-        status.className = "error";
-        status.textContent = "❌ 通信エラーが発生しました。";
-        btn.disabled = false;
+        status.className = "status-box error";
+        status.textContent = "❌ 登録失敗: " + err.message;
       }
     }
 
+    /**
+     * 解除実行
+     */
     async function unregisterDormMother() {
-      const status = document.getElementById("status");
-      const btn = document.getElementById("unregisterBtn");
-
-      if (!confirm("寮母さんの登録を解除します。よろしいですか？\n(解除するとLINEでの集計報告が停止します)")) {
-        return;
-      }
-
-      btn.disabled = true;
-      status.className = "loading";
+      if (!confirm("登録を解除します。よろしいですか？")) return;
+      const status = document.getElementById("globalStatus");
+      status.style.display = "block";
+      status.className = "status-box loading";
       status.innerHTML = '<span class="spinner"></span>解除処理中...';
-
       try {
-        const params = new URLSearchParams();
-        params.append("action", "clear_dorm_mother");
-
-        const response = await fetch(GAS_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: params,
-          redirect: "follow"
-        });
-
-        const json = await response.json();
-
+        const json = await callGasApi("clear_dorm_mother");
         if (json.success) {
-          status.className = "success";
-          status.textContent = "✅ 登録を解除しました。";
-          await checkCurrentStatus();
+          status.className = "status-box success";
+          status.textContent = "✅ 解除しました。";
+          setTimeout(checkCurrentStatus, 1500);
         } else {
-          status.className = "error";
-          status.textContent = "❌ 解除に失敗しました。";
-          btn.disabled = false;
+          throw new Error(json.message);
         }
       } catch (err) {
-        status.className = "error";
-        status.textContent = "❌ 通信エラーが発生しました。";
-        btn.disabled = false;
+        status.className = "status-box error";
+        status.textContent = "❌ 解除失敗: " + err.message;
       }
     }
 
+    // 開始
     init();
   </script>
 </body>
