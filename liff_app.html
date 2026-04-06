@@ -4,10 +4,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LINE連携 | 食数投票システム</title>
+  <title id="pageTitle">LINE連携 | 食数投票システム</title>
   <!-- LIFF SDK -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
+    :root {
+      --primary-color: #06C755; /* デフォルトはLINE Green */
+      --primary-hover: #05b04a;
+      --bg-gradient: linear-gradient(135deg, #06C755 0%, #00a844 100%);
+    }
+
+    /* 寮母モード用スタイル */
+    body.mode-dorm-mother {
+      --primary-color: #F57C00; /* オレンジ */
+      --primary-hover: #e65100;
+      --bg-gradient: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -16,12 +29,13 @@
 
     body {
       font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
-      background: linear-gradient(135deg, #06C755 0%, #00a844 100%);
+      background: var(--bg-gradient);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
+      transition: background 0.3s;
     }
 
     .card {
@@ -53,7 +67,7 @@
       line-height: 1.5;
     }
 
-    .step {
+    .info-box {
       background: #f0faf4;
       border-radius: 12px;
       padding: 14px 16px;
@@ -64,8 +78,12 @@
       line-height: 1.7;
     }
 
-    .step strong {
-      color: #06C755;
+    body.mode-dorm-mother .info-box {
+      background: #fff8e1;
+    }
+
+    .info-box strong {
+      color: var(--primary-color);
     }
 
     label {
@@ -93,13 +111,13 @@
     }
 
     input[type="text"]:focus {
-      border-color: #06C755;
+      border-color: var(--primary-color);
     }
 
-    button#submitBtn {
+    .btn {
       width: 100%;
       padding: 15px;
-      background: #06C755;
+      background: var(--primary-color);
       color: #fff;
       font-size: 16px;
       font-weight: 700;
@@ -107,39 +125,43 @@
       border-radius: 12px;
       cursor: pointer;
       transition: background 0.2s, transform 0.1s;
+      margin-bottom: 10px;
     }
 
-    button#submitBtn:hover {
-      background: #05b04a;
+    .btn:hover {
+      background: var(--primary-hover);
     }
 
-    button#submitBtn:active {
+    .btn:active {
       transform: scale(0.98);
     }
 
-    button#submitBtn:disabled {
+    .btn:disabled {
       background: #ccc;
       cursor: not-allowed;
     }
 
-    #status {
+    .status-box {
       margin-top: 18px;
       font-size: 14px;
       line-height: 1.6;
-      min-height: 22px;
+      padding: 12px;
+      border-radius: 8px;
     }
 
-    #status.success {
-      color: #06C755;
+    .status-box.success {
+      background-color: #e8f5e9;
+      color: #2e7d32;
       font-weight: 700;
     }
 
-    #status.error {
+    .status-box.error {
+      background-color: #ffebee;
       color: #e53e3e;
       font-weight: 600;
     }
 
-    #status.loading {
+    .status-box.loading {
       color: #888;
     }
 
@@ -148,7 +170,7 @@
       width: 18px;
       height: 18px;
       border: 2px solid #ccc;
-      border-top-color: #06C755;
+      border-top-color: var(--primary-color);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
       vertical-align: middle;
@@ -165,98 +187,244 @@
 
 <body>
   <div class="card">
-    <div class="logo">🔗</div>
-    <h1>LINEアカウント連携</h1>
-    <p class="subtitle">食数投票システムとLINEを繋いで<br>通知・投票をより便利に！</p>
+    <div id="logo" class="logo">🔗</div>
+    <h1 id="headerTitle">LINEアカウント連携</h1>
+    <p id="pageSubtitle" class="subtitle">食数投票システムとLINEを繋いで<br>通知・投票をより便利に！</p>
 
-    <div class="step">
-      <strong>使い方</strong><br>
-      ①&nbsp;SlackのBotとのDMで「🔗 LINEと連携する」ボタンを押す<br>
-      ②&nbsp;届いた<strong>4桁のコード</strong>を下の枠に入力する<br>
-      ③&nbsp;「連携する」ボタンを押すと完了！
+    <!-- 初期表示: LINEログイン確認 -->
+    <div id="initSection">
+      <div id="status" class="status-box">
+        <span class="spinner"></span> LINEを確認中...
+      </div>
+      <!-- 寮母モードの時だけ出る開始ボタン -->
+      <button id="startBtn" class="btn" style="display: none; margin-top: 15px;" onclick="startDormMotherFlow()">登録状況を確認する</button>
     </div>
 
-    <label for="otp">Slackで受け取った4桁のコード</label>
-    <input type="text" id="otp" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="0000">
-    <button id="submitBtn" onclick="submitOtp()">連携する</button>
-    <div id="status"></div>
+    <!-- モード別コンテンツ -->
+    <div id="contentSection" style="display: none;">
+      
+      <!-- 1. 通常モード: OTP入力 -->
+      <div id="userLinkingSection" style="display: none;">
+        <div class="info-box">
+          <strong>使い方</strong><br>
+          ① SlackのBotとのDMで「🔗 LINEと連携する」ボタンを押す<br>
+          ② 届いた4桁のコードを下の枠に入力する<br>
+          ③ 下のボタンを押すと完了！
+        </div>
+        <label for="otp">Slackで受け取った4桁のコード</label>
+        <input type="text" id="otp" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="0000">
+        <button id="submitBtn" class="btn" onclick="submitOtp()">連携する</button>
+      </div>
+
+      <!-- 2. 寮母モード: 登録/解除 -->
+      <div id="dormMotherSection" style="display: none;">
+        <div id="dormInfoBox" class="info-box">
+          <strong id="dormInfoTitle">ご案内</strong><br>
+          <span id="dormInfoContent">読み込み中...</span>
+        </div>
+        <button id="dormActionBtn" class="btn" onclick="handleDormAction()">処理を実行する</button>
+      </div>
+
+      <!-- 共通ステータス -->
+      <div id="resultStatus" class="status-box" style="display: none;"></div>
+    </div>
   </div>
 
   <script>
-    // TODO: LINE Developersで取得したLIFF IDに書き換えてください
+    /**
+     * 設定項目
+     */
     const LIFF_ID = "2009629480-rTF4dms1";
-
-    // GASのWebアプリURL（デプロイURL）
     const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbx23wbGW0ENBzcoO-D_olYrZONNDPBZvCdzrsPch_7_ozpaArKWQG0OauxTDMUl8FHRSA/exec";
 
     let lineUserId = null;
+    let isDormMotherMode = false;
+    let currentDormStatus = null; // { isRegisteredSelf, isRegisteredOther, lineUserId }
 
+    /**
+     * モード判定と初期化
+     */
     async function init() {
-      const status = document.getElementById("status");
-      const btn = document.getElementById("submitBtn");
+      const urlParams = new URLSearchParams(window.location.search);
+      isDormMotherMode = (urlParams.get('mode') === 'dorm_mother');
 
+      if (isDormMotherMode) {
+        setupDormMotherUI();
+      }
+
+      const status = document.getElementById("status");
       try {
         await liff.init({ liffId: LIFF_ID });
-
         if (!liff.isLoggedIn()) {
           liff.login();
           return;
         }
-
         const profile = await liff.getProfile();
         lineUserId = profile.userId;
-        status.className = "success";
-        status.textContent = `✅ LINEアカウントを確認しました (${profile.displayName})`;
+
+        if (isDormMotherMode) {
+          status.innerHTML = `<p style="color: #2e7d32; margin-bottom: 10px;">✅ LINEを確認しました</p><strong>${profile.displayName}</strong> さん`;
+          document.getElementById("startBtn").style.display = "block";
+        } else {
+          // 通常モードはそのままコンテンツを表示
+          document.getElementById("initSection").style.display = "none";
+          document.getElementById("contentSection").style.display = "block";
+          document.getElementById("userLinkingSection").style.display = "block";
+          status.className = "status-box success"; // 未使用だが一応
+        }
       } catch (err) {
-        status.className = "error";
-        status.textContent = "⚠️ LINE情報の取得に失敗しました。LINEアプリ内でこのページを開いてください。";
-        btn.disabled = true;
+        status.className = "status-box error";
+        status.textContent = "⚠️ LINE連携に失敗しました。 (" + err.message + ")";
       }
     }
 
+    /**
+     * UIの切り替え（寮母モード用）
+     */
+    function setupDormMotherUI() {
+      document.body.classList.add("mode-dorm-mother");
+      document.getElementById("pageTitle").textContent = "寮母設定 | 食数投票システム";
+      document.getElementById("headerTitle").textContent = "寮母さん設定";
+      document.getElementById("pageSubtitle").innerHTML = "食数投票の結果をLINEで受け取るための<br>手続きを行います。";
+      document.getElementById("logo").textContent = "👩‍🍳";
+    }
+
+    /**
+     * 寮母モード：開始ボタン押下
+     */
+    async function startDormMotherFlow() {
+      document.getElementById("initSection").style.display = "none";
+      document.getElementById("contentSection").style.display = "block";
+      document.getElementById("dormMotherSection").style.display = "block";
+      await checkDormMotherStatus();
+    }
+
+    /**
+     * GAS通信の共通関数
+     */
+    async function callGasApi(action, extraParams = {}) {
+      const body = { action, ...extraParams };
+      const response = await fetch(GAS_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        redirect: "follow"
+      });
+      if (!response.ok) throw new Error("通信エラー (HTTP " + response.status + ")");
+      const json = await response.json();
+      return json;
+    }
+
+    /**
+     * 通常モード：連携実行
+     */
     async function submitOtp() {
       const otp = document.getElementById("otp").value.trim();
-      const status = document.getElementById("status");
+      const status = document.getElementById("resultStatus");
       const btn = document.getElementById("submitBtn");
 
       if (!/^\d{4}$/.test(otp)) {
-        status.className = "error";
+        status.style.display = "block";
+        status.className = "status-box error";
         status.textContent = "❌ 4桁の数字を入力してください。";
         return;
       }
 
-      if (!lineUserId) {
-        status.className = "error";
-        status.textContent = "❌ LINEアカウントが取得できていません。ページを再読み込みしてください。";
-        return;
-      }
-
       btn.disabled = true;
-      status.className = "loading";
+      status.style.display = "block";
+      status.className = "status-box loading";
       status.innerHTML = '<span class="spinner"></span>連携中...';
 
       try {
-        const res = await fetch(GAS_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "line_link", otp, lineUserId }),
-          redirect: "follow"
-        });
-
-        const json = await res.json();
-
+        const json = await callGasApi("line_link", { otp, lineUserId });
         if (json.success) {
-          status.className = "success";
-          status.textContent = "🎉 連携が完了しました！これからLINEで通知が届きます。";
+          status.className = "status-box success";
+          status.textContent = "🎉 連携が完了しました！Slackの画面に戻ってください。";
           document.getElementById("otp").disabled = true;
         } else {
-          status.className = "error";
-          status.textContent = json.message || "❌ 連携に失敗しました。コードを確認するか、Slackで再発行してください。";
+          status.className = "status-box error";
+          status.textContent = json.message || "❌ 連携に失敗しました。コードを確認してください。";
           btn.disabled = false;
         }
       } catch (err) {
-        status.className = "error";
-        status.textContent = "❌ 通信エラーが発生しました。もう一度お試しください。";
+        status.className = "status-box error";
+        status.textContent = "❌ エラー: " + err.message;
+        btn.disabled = false;
+      }
+    }
+
+    /**
+     * 寮母モード：現在のステータス確認
+     */
+    async function checkDormMotherStatus() {
+      const title = document.getElementById("dormInfoTitle");
+      const content = document.getElementById("dormInfoContent");
+      const btn = document.getElementById("dormActionBtn");
+      
+      content.innerHTML = '<span class="spinner"></span>確認中...';
+      btn.disabled = true;
+
+      try {
+        const json = await callGasApi("get_dorm_mother_status");
+        if (json.success) {
+          if (json.dormMotherId === lineUserId) {
+            currentDormStatus = "registered_self";
+            title.textContent = "登録状況";
+            content.innerHTML = "現在、あなたが「寮母さん」として登録されています。<br>解除する場合は下のボタンを押してください。";
+            btn.textContent = "登録を解除する";
+            btn.style.background = "#e53e3e";
+          } else if (json.dormMotherId) {
+            currentDormStatus = "registered_other";
+            title.textContent = "引き継ぎのご案内";
+            content.innerHTML = "現在、別のアカウントが登録されています。<br>あなたが新しく寮母さんになる場合は、登録を上書きしてください。";
+            btn.textContent = "寮母登録を引き継ぐ";
+            btn.style.background = "var(--primary-color)";
+          } else {
+            currentDormStatus = "none";
+            title.textContent = "ご案内";
+            content.innerHTML = "下のボタンを押すと、あなたのアカウントを「寮母さん」として登録します。";
+            btn.textContent = "寮母として登録する";
+            btn.style.background = "var(--primary-color)";
+          }
+          btn.disabled = false;
+        }
+      } catch (err) {
+        content.textContent = "❌ ステータス取得失敗: " + err.message;
+      }
+    }
+
+    /**
+     * 寮母モード：アクション実行
+     */
+    async function handleDormAction() {
+      const confirmMsg = (currentDormStatus === "registered_self") ? "登録を解除しますか？" : "あなたを「寮母さん」として登録しますか？";
+      if (!confirm(confirmMsg)) return;
+
+      const status = document.getElementById("resultStatus");
+      const btn = document.getElementById("dormActionBtn");
+      
+      status.style.display = "block";
+      status.className = "status-box loading";
+      status.innerHTML = '<span class="spinner"></span>処理中...';
+      btn.disabled = true;
+
+      const action = (currentDormStatus === "registered_self") ? "clear_dorm_mother" : "set_dorm_mother";
+      
+      try {
+        const json = await callGasApi(action, { lineUserId: lineUserId });
+        if (json.success) {
+          status.className = "status-box success";
+          status.textContent = (action === "clear_dorm_mother") ? "✅ 解除しました。" : "🎉 登録完了しました！";
+          setTimeout(() => {
+            status.style.display = "none";
+            checkDormMotherStatus();
+          }, 1500);
+        } else {
+          throw new Error(json.message);
+        }
+      } catch (err) {
+        status.className = "status-box error";
+        status.textContent = "❌ 失敗: " + err.message;
         btn.disabled = false;
       }
     }
