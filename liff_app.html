@@ -9,14 +9,13 @@
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root {
-      --primary-color: #06C755; /* デフォルトはLINE Green */
+      --primary-color: #06C755;
       --primary-hover: #05b04a;
       --bg-gradient: linear-gradient(135deg, #06C755 0%, #00a844 100%);
     }
 
-    /* 寮母モード用スタイル */
     body.mode-dorm-mother {
-      --primary-color: #F57C00; /* オレンジ */
+      --primary-color: #F57C00;
       --primary-hover: #e65100;
       --bg-gradient: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
     }
@@ -46,6 +45,7 @@
       max-width: 360px;
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
       text-align: center;
+      position: relative;
     }
 
     .logo {
@@ -177,6 +177,29 @@
       margin-right: 6px;
     }
 
+    #modeSwitchBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 11px;
+      color: #bbb;
+      background: none;
+      border: 1px solid #eee;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #debugArea {
+      margin-top: 20px;
+      font-size: 10px;
+      color: #aaa;
+      text-align: left;
+      border-top: 1px dashed #eee;
+      padding-top: 10px;
+      display: none;
+    }
+
     @keyframes spin {
       to {
         transform: rotate(360deg);
@@ -187,6 +210,9 @@
 
 <body>
   <div class="card">
+    <!-- モード強制切り替えボタン (自動検知失敗時の予備) -->
+    <button id="modeSwitchBtn" onclick="toggleModeManually()">表示切替</button>
+
     <div id="logo" class="logo">🔗</div>
     <h1 id="headerTitle">LINEアカウント連携</h1>
     <p id="pageSubtitle" class="subtitle">食数投票システムとLINEを繋いで<br>通知・投票をより便利に！</p>
@@ -196,8 +222,7 @@
       <div id="status" class="status-box">
         <span class="spinner"></span> LINEを確認中...
       </div>
-      <!-- 寮母モードの時だけ出る開始ボタン -->
-      <button id="startBtn" class="btn" style="display: none; margin-top: 15px;" onclick="startDormMotherFlow()">登録状況を確認する</button>
+      <button id="startBtn" class="btn" style="display: none; margin-top: 15px;" onclick="startMainFlow()">開始する</button>
     </div>
 
     <!-- モード別コンテンツ -->
@@ -218,7 +243,7 @@
 
       <!-- 2. 寮母モード: 登録/解除 -->
       <div id="dormMotherSection" style="display: none;">
-        <div id="dormInfoBox" class="info-box">
+        <div class="info-box">
           <strong id="dormInfoTitle">ご案内</strong><br>
           <span id="dormInfoContent">読み込み中...</span>
         </div>
@@ -228,6 +253,8 @@
       <!-- 共通ステータス -->
       <div id="resultStatus" class="status-box" style="display: none;"></div>
     </div>
+
+    <div id="debugArea"></div>
   </div>
 
   <script>
@@ -239,64 +266,97 @@
 
     let lineUserId = null;
     let isDormMotherMode = false;
-    let currentDormStatus = null; // { isRegisteredSelf, isRegisteredOther, lineUserId }
+    let currentDormStatus = null;
+
+    function logDebug(msg) {
+      const debug = document.getElementById("debugArea");
+      debug.style.display = "block";
+      debug.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+    }
 
     /**
      * モード判定と初期化
      */
     async function init() {
-      const urlParams = new URLSearchParams(window.location.search);
-      isDormMotherMode = (urlParams.get('mode') === 'dorm_mother');
-
-      if (isDormMotherMode) {
-        setupDormMotherUI();
-      }
+      // モード判定の強化 (URL Search Param + liff.getContext)
+      isDormMotherMode = detectMode();
+      if (isDormMotherMode) applyDormMotherUI();
 
       const status = document.getElementById("status");
       try {
+        logDebug("LIFF Init start...");
         await liff.init({ liffId: LIFF_ID });
+        
         if (!liff.isLoggedIn()) {
+          logDebug("Not logged in, redirecting...");
           liff.login();
           return;
         }
+
         const profile = await liff.getProfile();
         lineUserId = profile.userId;
+        logDebug("User confirmed: " + profile.displayName);
 
-        if (isDormMotherMode) {
-          status.innerHTML = `<p style="color: #2e7d32; margin-bottom: 10px;">✅ LINEを確認しました</p><strong>${profile.displayName}</strong> さん`;
-          document.getElementById("startBtn").style.display = "block";
-        } else {
-          // 通常モードはそのままコンテンツを表示
-          document.getElementById("initSection").style.display = "none";
-          document.getElementById("contentSection").style.display = "block";
-          document.getElementById("userLinkingSection").style.display = "block";
-          status.className = "status-box success"; // 未使用だが一応
+        status.innerHTML = `<p style="color: #2e7d32; margin-bottom: 10px;">✅ LINEを確認しました</p><strong>${profile.displayName}</strong> さん`;
+        document.getElementById("startBtn").style.display = "block";
+
+        // 自動的にメインフローへ進む（寮母モード以外）
+        if (!isDormMotherMode) {
+          startMainFlow();
         }
       } catch (err) {
+        logDebug("Init Error: " + err.message);
         status.className = "status-box error";
         status.textContent = "⚠️ LINE連携に失敗しました。 (" + err.message + ")";
       }
     }
 
-    /**
-     * UIの切り替え（寮母モード用）
-     */
-    function setupDormMotherUI() {
+    function detectMode() {
+      // 1. URLパラメータから取得
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('mode') === 'dorm_mother') return true;
+
+      // 2. LIFFコンテキストから取得 (一部の環境用)
+      try {
+        const context = liff.getContext();
+        if (context && context.endpointUrl && context.endpointUrl.includes('mode=dorm_mother')) return true;
+      } catch (e) { }
+
+      return false;
+    }
+
+    function toggleModeManually() {
+      isDormMotherMode = !isDormMotherMode;
+      if (isDormMotherMode) applyDormMotherUI();
+      else location.reload(); // 通常モードに戻す時はリロードが確実
+    }
+
+    function applyDormMotherUI() {
       document.body.classList.add("mode-dorm-mother");
       document.getElementById("pageTitle").textContent = "寮母設定 | 食数投票システム";
       document.getElementById("headerTitle").textContent = "寮母さん設定";
       document.getElementById("pageSubtitle").innerHTML = "食数投票の結果をLINEで受け取るための<br>手続きを行います。";
       document.getElementById("logo").textContent = "👩‍🍳";
+      if (document.getElementById("contentSection").style.display === "block") {
+        document.getElementById("userLinkingSection").style.display = "none";
+        document.getElementById("dormMotherSection").style.display = "block";
+        checkDormMotherStatus();
+      }
     }
 
     /**
-     * 寮母モード：開始ボタン押下
+     * 開始ボタン押下
      */
-    async function startDormMotherFlow() {
+    async function startMainFlow() {
       document.getElementById("initSection").style.display = "none";
       document.getElementById("contentSection").style.display = "block";
-      document.getElementById("dormMotherSection").style.display = "block";
-      await checkDormMotherStatus();
+      
+      if (isDormMotherMode) {
+        document.getElementById("dormMotherSection").style.display = "block";
+        await checkDormMotherStatus();
+      } else {
+        document.getElementById("userLinkingSection").style.display = "block";
+      }
     }
 
     /**
@@ -304,15 +364,24 @@
      */
     async function callGasApi(action, extraParams = {}) {
       const body = { action, ...extraParams };
-      const response = await fetch(GAS_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        redirect: "follow"
-      });
-      if (!response.ok) throw new Error("通信エラー (HTTP " + response.status + ")");
-      const json = await response.json();
-      return json;
+      logDebug(`Request: ${action}...`);
+
+      try {
+        const response = await fetch(GAS_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" }, // CORS回避に最も有効なtext/plainを使用
+          body: JSON.stringify(body),
+          redirect: "follow"
+        });
+
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const text = await response.text();
+        logDebug(`Response: ${text.substring(0, 30)}...`);
+        return JSON.parse(text);
+      } catch (err) {
+        logDebug(`Fetch Error: ${err.message}`);
+        throw err;
+      }
     }
 
     /**
@@ -343,25 +412,25 @@
           document.getElementById("otp").disabled = true;
         } else {
           status.className = "status-box error";
-          status.textContent = json.message || "❌ 連携に失敗しました。コードを確認してください。";
+          status.textContent = json.message || "❌ 連携に失敗しました。";
           btn.disabled = false;
         }
       } catch (err) {
         status.className = "status-box error";
-        status.textContent = "❌ エラー: " + err.message;
+        status.textContent = "❌ 通信エラー: " + err.message;
         btn.disabled = false;
       }
     }
 
     /**
-     * 寮母モード：現在のステータス確認
+     * 寮母モード：ステータス確認
      */
     async function checkDormMotherStatus() {
       const title = document.getElementById("dormInfoTitle");
       const content = document.getElementById("dormInfoContent");
       const btn = document.getElementById("dormActionBtn");
       
-      content.innerHTML = '<span class="spinner"></span>確認中...';
+      content.innerHTML = '<span class="spinner"></span>サーバーを確認中...';
       btn.disabled = true;
 
       try {
@@ -370,51 +439,42 @@
           if (json.dormMotherId === lineUserId) {
             currentDormStatus = "registered_self";
             title.textContent = "登録状況";
-            content.innerHTML = "現在、あなたが「寮母さん」として登録されています。<br>解除する場合は下のボタンを押してください。";
+            content.innerHTML = "現在、あなたが「寮母さん」として登録されています。";
             btn.textContent = "登録を解除する";
             btn.style.background = "#e53e3e";
           } else if (json.dormMotherId) {
             currentDormStatus = "registered_other";
-            title.textContent = "引き継ぎのご案内";
-            content.innerHTML = "現在、別のアカウントが登録されています。<br>あなたが新しく寮母さんになる場合は、登録を上書きしてください。";
+            title.textContent = "他の方が登録中です";
+            content.innerHTML = "現在、別の方が登録されています。上書きしてあなたが登録しますか？";
             btn.textContent = "寮母登録を引き継ぐ";
             btn.style.background = "var(--primary-color)";
           } else {
             currentDormStatus = "none";
             title.textContent = "ご案内";
-            content.innerHTML = "下のボタンを押すと、あなたのアカウントを「寮母さん」として登録します。";
+            content.innerHTML = "このアカウントを「寮母さん」として設定します。";
             btn.textContent = "寮母として登録する";
             btn.style.background = "var(--primary-color)";
           }
           btn.disabled = false;
         }
       } catch (err) {
-        content.textContent = "❌ ステータス取得失敗: " + err.message;
+        content.textContent = "❌ 接続失敗: " + err.message;
       }
     }
 
-    /**
-     * 寮母モード：アクション実行
-     */
     async function handleDormAction() {
-      const confirmMsg = (currentDormStatus === "registered_self") ? "登録を解除しますか？" : "あなたを「寮母さん」として登録しますか？";
-      if (!confirm(confirmMsg)) return;
-
       const status = document.getElementById("resultStatus");
-      const btn = document.getElementById("dormActionBtn");
+      const action = (currentDormStatus === "registered_self") ? "clear_dorm_mother" : "set_dorm_mother";
       
       status.style.display = "block";
       status.className = "status-box loading";
       status.innerHTML = '<span class="spinner"></span>処理中...';
-      btn.disabled = true;
 
-      const action = (currentDormStatus === "registered_self") ? "clear_dorm_mother" : "set_dorm_mother";
-      
       try {
         const json = await callGasApi(action, { lineUserId: lineUserId });
         if (json.success) {
           status.className = "status-box success";
-          status.textContent = (action === "clear_dorm_mother") ? "✅ 解除しました。" : "🎉 登録完了しました！";
+          status.textContent = "✅ 処理が完了しました。";
           setTimeout(() => {
             status.style.display = "none";
             checkDormMotherStatus();
@@ -425,7 +485,6 @@
       } catch (err) {
         status.className = "status-box error";
         status.textContent = "❌ 失敗: " + err.message;
-        btn.disabled = false;
       }
     }
 
