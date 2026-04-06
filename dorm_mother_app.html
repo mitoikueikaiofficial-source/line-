@@ -217,7 +217,7 @@
     }
 
     /**
-     * サーバーと汎用的に通信する関数
+     * サーバーと汎用的に通信する関数 (CORS回避のためGETを使用)
      */
     async function callGasApi(action, extraParams = {}) {
       const params = new URLSearchParams();
@@ -226,10 +226,12 @@
         params.append(key, extraParams[key]);
       }
 
-      const response = await fetch(GAS_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: params,
+      // GETリクエスト用にURLを構築
+      const url = `${GAS_ENDPOINT}?${params.toString()}`;
+
+      const response = await fetch(url, {
+        method: "GET",
+        mode: "cors",
         redirect: "follow"
       });
 
