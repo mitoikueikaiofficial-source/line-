@@ -213,10 +213,13 @@
       status.innerHTML = '<span class="spinner"></span>状態を確認中...';
 
       try {
+        const params = new URLSearchParams();
+        params.append("action", "get_dorm_mother_status");
+
         const response = await fetch(GAS_ENDPOINT, {
           method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({ action: "get_dorm_mother_status" }),
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: params,
           redirect: "follow"
         });
 
@@ -267,10 +270,14 @@
       status.innerHTML = '<span class="spinner"></span>登録処理中...';
 
       try {
+        const params = new URLSearchParams();
+        params.append("action", "set_dorm_mother");
+        params.append("lineUserId", lineUserId);
+
         const response = await fetch(GAS_ENDPOINT, {
           method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({ action: "set_dorm_mother", lineUserId: lineUserId }),
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: params,
           redirect: "follow"
         });
 
@@ -305,10 +312,13 @@
       status.innerHTML = '<span class="spinner"></span>解除処理中...';
 
       try {
+        const params = new URLSearchParams();
+        params.append("action", "clear_dorm_mother");
+
         const response = await fetch(GAS_ENDPOINT, {
           method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({ action: "clear_dorm_mother" }),
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: params,
           redirect: "follow"
         });
 
