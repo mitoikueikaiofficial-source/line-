@@ -325,14 +325,17 @@
      * 通信
      */
     async function callGas(action, extra = {}) {
-      const body = { action, ...extra };
-      log("API: " + action);
+      const url = new URL(GAS_ENDPOINT);
+      url.searchParams.append("action", action);
+      for (const key in extra) {
+        url.searchParams.append(key, extra[key]);
+      }
+
+      log("API (GET): " + action);
       
       try {
-        const response = await fetch(GAS_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+        const response = await fetch(url.toString(), {
+          method: "GET",
           redirect: "follow"
         });
 
