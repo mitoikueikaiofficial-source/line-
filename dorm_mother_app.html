@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>寮母登録 | 食数投票システム</title>
+  <!-- LIFF SDK -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 36px 28px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    .info-box {
+      background: #fff8e1;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      text-align: left;
+      font-size: 13px;
+      color: #333;
+      line-height: 1.7;
+    }
+
+    .info-box strong {
+      color: #F57C00;
+    }
+
+    button#submitBtn {
+      width: 100%;
+      padding: 15px;
+      background: #F57C00;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button#submitBtn:hover {
+      background: #e65100;
+    }
+
+    button#submitBtn:active {
+      transform: scale(0.98);
+    }
+
+    button#submitBtn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    #status {
+      margin-top: 18px;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 22px;
+    }
+
+    #status.success {
+      color: #2e7d32;
+      font-weight: 700;
+    }
+
+    #status.error {
+      color: #e53e3e;
+      font-weight: 600;
+    }
+
+    #status.loading {
+      color: #888;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid #ccc;
+      border-top-color: #F57C00;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <div class="logo">👩‍🍳</div>
+    <h1>寮母さん登録</h1>
+    <p class="subtitle">食数投票の結果をLINEで受け取るための<br>登録手続きを行います。</p>
+
+    <div class="info-box">
+      <strong>ご案内</strong><br>
+      下のボタンを押すと、あなたのLINEアカウントを「寮母さん」として登録します。<br>
+      登録が完了すると、毎週の集計結果がこのアカウント宛に届くようになります。
+    </div>
+
+    <button id="submitBtn" onclick="registerDormMother()">寮母として登録する</button>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    /**
+     * 設定項目
+     */
+    // TODO: 1. LINE Developersで新しく作成した寮母登録用LIFFの「LIFF ID」に書き換えてください
+    const LIFF_ID = "ここに新しいLIFF_IDを入力";
+
+    // 既存の liff_app.html で使用している GAS_ENDPOINT と同じものをセットしています
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbx23wbGW0ENBzcoO-D_olYrZONNDPBZvCdzrsPch_7_ozpaArKWQG0OauxTDMUl8FHRSA/exec";
+
+    let lineUserId = null;
+
+    async function init() {
+      const status = document.getElementById("status");
+      const btn = document.getElementById("submitBtn");
+
+      try {
+        await liff.init({ liffId: LIFF_ID });
+
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+
+        const profile = await liff.getProfile();
+        lineUserId = profile.userId;
+        status.className = "success";
+        status.textContent = `✅ LINE連携中: ${profile.displayName} さん`;
+      } catch (err) {
+        status.className = "error";
+        status.textContent = "⚠️ LINE情報の取得に失敗しました。LINEアプリ内でこのページを開いてください。";
+        btn.disabled = true;
+      }
+    }
+
+    async function registerDormMother() {
+      const status = document.getElementById("status");
+      const btn = document.getElementById("submitBtn");
+
+      if (!lineUserId) {
+        status.className = "error";
+        status.textContent = "❌ LINEアカウントが取得できていません。再読み込みしてください。";
+        return;
+      }
+
+      if (!confirm("あなたをこのシステムの「寮母さん」として登録します。よろしいですか？\n(以前の寮母さんの登録は自動的に上書きされます)")) {
+        return;
+      }
+
+      btn.disabled = true;
+      status.className = "loading";
+      status.innerHTML = '<span class="spinner"></span>登録処理中...';
+
+      try {
+        // GAS WebアプリへPOST送信
+        const response = await fetch(GAS_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "set_dorm_mother", lineUserId: lineUserId }),
+          redirect: "follow"
+        });
+
+        const json = await response.json();
+
+        if (json.success) {
+          status.className = "success";
+          status.textContent = "🎉 登録が完了しました！毎週の集計結果がこのトークに届きます。";
+        } else {
+          status.className = "error";
+          status.textContent = "❌ 登録に失敗しました: " + (json.message || "不明なエラー");
+          btn.disabled = false;
+        }
+      } catch (err) {
+        status.className = "error";
+        status.textContent = "❌ 通信エラーが発生しました。時間を置いて再度お試しください。";
+        btn.disabled = false;
+      }
+    }
+
+    init();
+  </script>
+</body>
+
+</html>
