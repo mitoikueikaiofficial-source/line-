@@ -195,8 +195,9 @@
         await checkCurrentStatus();
 
       } catch (err) {
+        console.error("LIFF Init Error:", err);
         status.className = "error";
-        status.textContent = "⚠️ LINE情報の取得に失敗しました。LINEアプリ内でこのページを開いてください。";
+        status.textContent = "⚠️ LINE情報の取得に失敗しました。LINEアプリ内でこのページを開いてください。 (" + err.message + ")";
       }
     }
 
@@ -214,12 +215,17 @@
       try {
         const response = await fetch(GAS_ENDPOINT, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "text/plain" },
           body: JSON.stringify({ action: "get_dorm_mother_status" }),
           redirect: "follow"
         });
 
+        if (!response.ok) {
+          throw new Error("HTTP error! status: " + response.status);
+        }
+
         const json = await response.json();
+        console.log("Status check result:", json);
         
         if (json.success) {
           status.innerHTML = "";
@@ -242,8 +248,9 @@
           }
         }
       } catch (err) {
+        console.error("CheckStatus Error:", err);
         status.className = "error";
-        status.textContent = "❌ 状態の取得に失敗しました。";
+        status.textContent = "❌ 状態の取得に失敗しました。 (" + err.message + ")";
       }
     }
 
@@ -262,7 +269,7 @@
       try {
         const response = await fetch(GAS_ENDPOINT, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "text/plain" },
           body: JSON.stringify({ action: "set_dorm_mother", lineUserId: lineUserId }),
           redirect: "follow"
         });
@@ -300,7 +307,7 @@
       try {
         const response = await fetch(GAS_ENDPOINT, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "text/plain" },
           body: JSON.stringify({ action: "clear_dorm_mother" }),
           redirect: "follow"
         });
