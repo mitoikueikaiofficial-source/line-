@@ -136,6 +136,19 @@
         transform: rotate(360deg);
       }
     }
+
+    /* デバッグ用 */
+    #debug {
+      margin-top: 20px;
+      font-size: 10px;
+      color: #999;
+      text-align: left;
+      word-break: break-all;
+      background: #f9f9f9;
+      padding: 8px;
+      border-radius: 4px;
+      display: none;
+    }
   </style>
 </head>
 
@@ -175,6 +188,8 @@
       </div>
       <button id="unregisterBtn" class="btn" onclick="unregisterDormMother()" style="background: #e53e3e;">登録を解除する</button>
     </div>
+
+    <div id="debug"></div>
   </div>
 
   <script>
@@ -186,22 +201,32 @@
 
     let lineUserId = null;
 
+    function logDebug(msg) {
+      const debug = document.getElementById("debug");
+      debug.style.display = "block";
+      debug.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+    }
+
     /**
      * LIFFの初期化
      */
     async function init() {
       const status = document.getElementById("status");
       try {
+        logDebug("LIFF Init start...");
         await liff.init({ liffId: LIFF_ID });
         if (!liff.isLoggedIn()) {
+          logDebug("Not logged in, redirecting to login...");
           liff.login();
           return;
         }
         const profile = await liff.getProfile();
         lineUserId = profile.userId;
+        logDebug("LINE User confirmed: " + profile.displayName);
         status.innerHTML = `<p style="color: #2e7d32; margin-bottom: 10px;">✅ LINEを確認しました</p><strong>${profile.displayName}</strong> さん`;
         document.getElementById("startBtn").style.display = "block";
       } catch (err) {
+        logDebug("LIFF Init Error: " + err.message);
         console.error("LIFF Init Error:", err);
         status.className = "status-box error";
         status.textContent = "⚠️ LINE情報の取得に失敗しました。 (" + err.message + ")";
@@ -217,7 +242,8 @@
     }
 
     /**
-     * サーバーと汎用的に通信する関数 (liff_app.html と同じく POST+JSON を使用)
+     * サーバーと汎用的に通信する関数
+     * CORS対策として Content-Type: text/plain を使用（Simple Requestとして扱う）
      */
     async function callGasApi(action, extraParams = {}) {
       const body = {
@@ -225,20 +251,35 @@
         ...extraParams
       };
 
-      const response = await fetch(GAS_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        redirect: "follow"
-      });
+      logDebug(`Fetching: ${action}...`);
 
-      if (!response.ok) throw new Error("HTTP " + response.status);
-
-      const text = await response.text();
       try {
-        return JSON.parse(text);
-      } catch (e) {
-        throw new Error("JSON Parse Error: " + text.substring(0, 100));
+        const response = await fetch(GAS_ENDPOINT, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "text/plain" // CORS回避の要: simple requestにする
+          },
+          body: JSON.stringify(body),
+          redirect: "follow"
+        });
+
+        if (!response.ok) {
+          logDebug(`HTTP error! status: ${response.status}`);
+          throw new Error("HTTP " + response.status);
+        }
+
+        const text = await response.text();
+        logDebug(`Response received (${text.length} chars)`);
+        
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          logDebug("JSON Parse Error: " + text.substring(0, 50));
+          throw new Error("JSON Parse Error");
+        }
+      } catch (err) {
+        logDebug(`Fetch catch: ${err.message}`);
+        throw err;
       }
     }
 
