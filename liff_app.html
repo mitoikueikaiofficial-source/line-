@@ -34,7 +34,6 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
-      transition: background 0.3s;
     }
 
     .card {
@@ -54,7 +53,7 @@
     }
 
     h1 {
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 700;
       color: #111;
       margin-bottom: 6px;
@@ -84,34 +83,6 @@
 
     .info-box strong {
       color: var(--primary-color);
-    }
-
-    label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: #444;
-      margin-bottom: 8px;
-      text-align: left;
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 14px 16px;
-      font-size: 28px;
-      letter-spacing: 12px;
-      text-align: center;
-      border: 2px solid #ddd;
-      border-radius: 12px;
-      outline: none;
-      transition: border-color 0.2s;
-      margin-bottom: 16px;
-      font-weight: 700;
-      color: #111;
-    }
-
-    input[type="text"]:focus {
-      border-color: var(--primary-color);
     }
 
     .btn {
@@ -161,10 +132,6 @@
       font-weight: 600;
     }
 
-    .status-box.loading {
-      color: #888;
-    }
-
     .spinner {
       display: inline-block;
       width: 18px;
@@ -177,314 +144,293 @@
       margin-right: 6px;
     }
 
-    #modeSwitchBtn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      font-size: 11px;
-      color: #bbb;
-      background: none;
-      border: 1px solid #eee;
-      padding: 4px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    #debugArea {
-      margin-top: 20px;
-      font-size: 10px;
-      color: #aaa;
-      text-align: left;
-      border-top: 1px dashed #eee;
-      padding-top: 10px;
-      display: none;
-    }
-
     @keyframes spin {
       to {
         transform: rotate(360deg);
       }
+    }
+
+    /* 手動切替ボタン */
+    #manualSwitch {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 10px;
+      color: #ccc;
+      padding: 2px 6px;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #fff;
+    }
+
+    /* デバッグ表示 */
+    #debug {
+      margin-top: 24px;
+      padding: 10px;
+      background: #f8f8f8;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      font-size: 10px;
+      color: #888;
+      text-align: left;
+      word-break: break-all;
+      max-height: 100px;
+      overflow-y: auto;
     }
   </style>
 </head>
 
 <body>
   <div class="card">
-    <!-- モード強制切り替えボタン (自動検知失敗時の予備) -->
-    <button id="modeSwitchBtn" onclick="toggleModeManually()">表示切替</button>
-
+    <div id="manualSwitch" onclick="toggleModeManually()">🔧 表示切替</div>
+    
     <div id="logo" class="logo">🔗</div>
     <h1 id="headerTitle">LINEアカウント連携</h1>
     <p id="pageSubtitle" class="subtitle">食数投票システムとLINEを繋いで<br>通知・投票をより便利に！</p>
 
-    <!-- 初期表示: LINEログイン確認 -->
+    <!-- 1. 初期化・ログインセクション -->
     <div id="initSection">
       <div id="status" class="status-box">
-        <span class="spinner"></span> LINEを確認中...
+        <span class="spinner"></span> 読み込み中...
       </div>
-      <button id="startBtn" class="btn" style="display: none; margin-top: 15px;" onclick="startMainFlow()">開始する</button>
+      <button id="startBtn" class="btn" style="display: none; margin-top: 15px;" onclick="startFlow()">開始する</button>
     </div>
 
-    <!-- モード別コンテンツ -->
+    <!-- 2. コンテンツセクション -->
     <div id="contentSection" style="display: none;">
-      
-      <!-- 1. 通常モード: OTP入力 -->
-      <div id="userLinkingSection" style="display: none;">
+      <!-- 通常モード: OTP入力 -->
+      <div id="userSection" style="display: none;">
         <div class="info-box">
           <strong>使い方</strong><br>
-          ① SlackのBotとのDMで「🔗 LINEと連携する」ボタンを押す<br>
-          ② 届いた4桁のコードを下の枠に入力する<br>
-          ③ 下のボタンを押すと完了！
+          ① Slackで「🔗 LINEと連携する」ボタンを押す<br>
+          ② 届いた4桁のコードを入力する<br>
+          ③ 「連携する」ボタンを押すと完了！
         </div>
-        <label for="otp">Slackで受け取った4桁のコード</label>
-        <input type="text" id="otp" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="0000">
-        <button id="submitBtn" class="btn" onclick="submitOtp()">連携する</button>
+        <input type="text" id="otp" maxlength="4" inputmode="numeric" placeholder="0000" style="width:100%; padding:14px; font-size:24px; letter-spacing:10px; text-align:center; border:2px solid #ddd; border-radius:12px; margin-bottom:15px;">
+        <button id="otpSubmitBtn" class="btn" onclick="submitOtp()">連携する</button>
       </div>
 
-      <!-- 2. 寮母モード: 登録/解除 -->
-      <div id="dormMotherSection" style="display: none;">
+      <!-- 寮母モード -->
+      <div id="dormSection" style="display: none;">
         <div class="info-box">
           <strong id="dormInfoTitle">ご案内</strong><br>
           <span id="dormInfoContent">読み込み中...</span>
         </div>
-        <button id="dormActionBtn" class="btn" onclick="handleDormAction()">処理を実行する</button>
+        <button id="dormActionBtn" class="btn" onclick="handleDormAction()">反映する</button>
       </div>
 
       <!-- 共通ステータス -->
       <div id="resultStatus" class="status-box" style="display: none;"></div>
     </div>
 
-    <div id="debugArea"></div>
+    <!-- デバッグ表示 -->
+    <div id="debug"></div>
   </div>
 
   <script>
     /**
-     * 設定項目
+     * 設定
      */
     const LIFF_ID = "2009629480-rTF4dms1";
     const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbx23wbGW0ENBzcoO-D_olYrZONNDPBZvCdzrsPch_7_ozpaArKWQG0OauxTDMUl8FHRSA/exec";
 
     let lineUserId = null;
     let isDormMotherMode = false;
-    let currentDormStatus = null;
+    let currentDormStatus = "none";
 
-    function logDebug(msg) {
-      const debug = document.getElementById("debugArea");
-      debug.style.display = "block";
-      debug.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+    function log(msg) {
+      const dbg = document.getElementById("debug");
+      dbg.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+      console.log(msg);
     }
 
     /**
-     * モード判定と初期化
+     * モード判定（最優先）
+     */
+    function detectMode() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("mode") === "dorm_mother") return true;
+      if (window.location.href.includes("mode=dorm_mother")) return true;
+      return false;
+    }
+
+    function toggleModeManually() {
+      isDormMotherMode = !isDormMotherMode;
+      applyUI();
+      log("Manual switch: " + isDormMotherMode);
+    }
+
+    function applyUI() {
+      if (isDormMotherMode) {
+        document.body.classList.add("mode-dorm-mother");
+        document.getElementById("pageTitle").innerText = "寮母設定 | 食数投票システム";
+        document.getElementById("headerTitle").innerText = "寮母さん設定";
+        document.getElementById("pageSubtitle").innerHTML = "投票結果の受け取り設定を行います";
+        document.getElementById("logo").innerText = "👩‍🍳";
+      } else {
+        document.body.classList.remove("mode-dorm-mother");
+        document.getElementById("pageTitle").innerText = "LINE連携 | 食数投票システム";
+        document.getElementById("headerTitle").innerText = "LINEアカウント連携";
+        document.getElementById("pageSubtitle").innerHTML = "SlackとLINEを繋いで便利にします";
+        document.getElementById("logo").innerText = "🔗";
+      }
+    }
+
+    /**
+     * 初期化
      */
     async function init() {
-      // モード判定の強化 (URL Search Param + liff.getContext)
       isDormMotherMode = detectMode();
-      if (isDormMotherMode) applyDormMotherUI();
-
+      applyUI();
+      
       const status = document.getElementById("status");
       try {
-        logDebug("LIFF Init start...");
+        log("Init Start...");
         await liff.init({ liffId: LIFF_ID });
         
         if (!liff.isLoggedIn()) {
-          logDebug("Not logged in, redirecting...");
+          log("Logged out, login...");
           liff.login();
           return;
         }
 
         const profile = await liff.getProfile();
         lineUserId = profile.userId;
-        logDebug("User confirmed: " + profile.displayName);
+        log("User: " + profile.displayName);
 
-        status.innerHTML = `<p style="color: #2e7d32; margin-bottom: 10px;">✅ LINEを確認しました</p><strong>${profile.displayName}</strong> さん`;
+        status.innerHTML = `<p style="color:#2e7d32">✅ LINEを確認しました</p><strong>${profile.displayName}</strong> さん`;
         document.getElementById("startBtn").style.display = "block";
 
-        // 自動的にメインフローへ進む（寮母モード以外）
-        if (!isDormMotherMode) {
-          startMainFlow();
-        }
+        if (!isDormMotherMode) startFlow(); // ユーザー連携は自動で次へ
       } catch (err) {
-        logDebug("Init Error: " + err.message);
+        log("Error: " + err.message);
         status.className = "status-box error";
-        status.textContent = "⚠️ LINE連携に失敗しました。 (" + err.message + ")";
+        status.innerText = "⚠️ 接続失敗: " + err.message;
       }
     }
 
-    function detectMode() {
-      // 1. URLパラメータから取得
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('mode') === 'dorm_mother') return true;
-
-      // 2. LIFFコンテキストから取得 (一部の環境用)
-      try {
-        const context = liff.getContext();
-        if (context && context.endpointUrl && context.endpointUrl.includes('mode=dorm_mother')) return true;
-      } catch (e) { }
-
-      return false;
-    }
-
-    function toggleModeManually() {
-      isDormMotherMode = !isDormMotherMode;
-      if (isDormMotherMode) applyDormMotherUI();
-      else location.reload(); // 通常モードに戻す時はリロードが確実
-    }
-
-    function applyDormMotherUI() {
-      document.body.classList.add("mode-dorm-mother");
-      document.getElementById("pageTitle").textContent = "寮母設定 | 食数投票システム";
-      document.getElementById("headerTitle").textContent = "寮母さん設定";
-      document.getElementById("pageSubtitle").innerHTML = "食数投票の結果をLINEで受け取るための<br>手続きを行います。";
-      document.getElementById("logo").textContent = "👩‍🍳";
-      if (document.getElementById("contentSection").style.display === "block") {
-        document.getElementById("userLinkingSection").style.display = "none";
-        document.getElementById("dormMotherSection").style.display = "block";
-        checkDormMotherStatus();
-      }
-    }
-
-    /**
-     * 開始ボタン押下
-     */
-    async function startMainFlow() {
+    function startFlow() {
       document.getElementById("initSection").style.display = "none";
       document.getElementById("contentSection").style.display = "block";
-      
       if (isDormMotherMode) {
-        document.getElementById("dormMotherSection").style.display = "block";
-        await checkDormMotherStatus();
+        document.getElementById("dormSection").style.display = "block";
+        checkDormStatus();
       } else {
-        document.getElementById("userLinkingSection").style.display = "block";
+        document.getElementById("userSection").style.display = "block";
       }
     }
 
     /**
-     * GAS通信の共通関数
+     * 通信
      */
-    async function callGasApi(action, extraParams = {}) {
-      const body = { action, ...extraParams };
-      logDebug(`Request: ${action}...`);
-
+    async function callGas(action, extra = {}) {
+      const body = { action, ...extra };
+      log("API: " + action);
+      
       try {
         const response = await fetch(GAS_ENDPOINT, {
           method: "POST",
-          headers: { "Content-Type": "text/plain" }, // CORS回避に最も有効なtext/plainを使用
+          headers: { "Content-Type": "text/plain" }, // CORS回避の王道
           body: JSON.stringify(body),
           redirect: "follow"
         });
 
         if (!response.ok) throw new Error("HTTP " + response.status);
         const text = await response.text();
-        logDebug(`Response: ${text.substring(0, 30)}...`);
+        log("Done: " + text.substring(0, 20));
         return JSON.parse(text);
       } catch (err) {
-        logDebug(`Fetch Error: ${err.message}`);
+        log("API Error: " + err.message);
         throw err;
       }
     }
 
     /**
-     * 通常モード：連携実行
+     * ユーザー連携
      */
     async function submitOtp() {
       const otp = document.getElementById("otp").value.trim();
       const status = document.getElementById("resultStatus");
-      const btn = document.getElementById("submitBtn");
-
       if (!/^\d{4}$/.test(otp)) {
         status.style.display = "block";
         status.className = "status-box error";
-        status.textContent = "❌ 4桁の数字を入力してください。";
+        status.innerText = "❌ 4桁を入力してください";
         return;
       }
-
-      btn.disabled = true;
       status.style.display = "block";
       status.className = "status-box loading";
-      status.innerHTML = '<span class="spinner"></span>連携中...';
-
+      status.innerHTML = '<span class="spinner"></span>処理中...';
       try {
-        const json = await callGasApi("line_link", { otp, lineUserId });
-        if (json.success) {
+        const res = await callGas("line_link", { otp, lineUserId });
+        if (res.success) {
           status.className = "status-box success";
-          status.textContent = "🎉 連携が完了しました！Slackの画面に戻ってください。";
-          document.getElementById("otp").disabled = true;
+          status.innerText = "🎉 連携完了！Slackに戻ってください。";
         } else {
           status.className = "status-box error";
-          status.textContent = json.message || "❌ 連携に失敗しました。";
-          btn.disabled = false;
+          status.innerText = res.message || "❌ 失敗";
         }
-      } catch (err) {
+      } catch (e) {
         status.className = "status-box error";
-        status.textContent = "❌ 通信エラー: " + err.message;
-        btn.disabled = false;
+        status.innerText = "❌ エラー: " + e.message;
       }
     }
 
     /**
-     * 寮母モード：ステータス確認
+     * 寮母設定
      */
-    async function checkDormMotherStatus() {
-      const title = document.getElementById("dormInfoTitle");
+    async function checkDormStatus() {
       const content = document.getElementById("dormInfoContent");
       const btn = document.getElementById("dormActionBtn");
-      
-      content.innerHTML = '<span class="spinner"></span>サーバーを確認中...';
+      content.innerHTML = '<span class="spinner"></span>確認中...';
       btn.disabled = true;
-
       try {
-        const json = await callGasApi("get_dorm_mother_status");
-        if (json.success) {
-          if (json.dormMotherId === lineUserId) {
+        const res = await callGas("get_dorm_mother_status");
+        if (res.success) {
+          if (res.dormMotherId === lineUserId) {
             currentDormStatus = "registered_self";
-            title.textContent = "登録状況";
-            content.innerHTML = "現在、あなたが「寮母さん」として登録されています。";
-            btn.textContent = "登録を解除する";
+            content.innerHTML = "現在、あなたが登録されています。";
+            btn.innerText = "登録を解除する";
             btn.style.background = "#e53e3e";
-          } else if (json.dormMotherId) {
+          } else if (res.dormMotherId) {
             currentDormStatus = "registered_other";
-            title.textContent = "他の方が登録中です";
-            content.innerHTML = "現在、別の方が登録されています。上書きしてあなたが登録しますか？";
-            btn.textContent = "寮母登録を引き継ぐ";
+            content.innerHTML = "現在、別の方が登録されています。上書きしますか？";
+            btn.innerText = "登録を上書きする";
             btn.style.background = "var(--primary-color)";
           } else {
             currentDormStatus = "none";
-            title.textContent = "ご案内";
-            content.innerHTML = "このアカウントを「寮母さん」として設定します。";
-            btn.textContent = "寮母として登録する";
+            content.innerHTML = "あなたが寮母さんとして登録し、集計を受け取ります。";
+            btn.innerText = "登録する";
             btn.style.background = "var(--primary-color)";
           }
           btn.disabled = false;
         }
-      } catch (err) {
-        content.textContent = "❌ 接続失敗: " + err.message;
+      } catch (e) {
+        content.innerText = "❌ エラー: " + e.message;
       }
     }
 
     async function handleDormAction() {
-      const status = document.getElementById("resultStatus");
       const action = (currentDormStatus === "registered_self") ? "clear_dorm_mother" : "set_dorm_mother";
-      
+      const status = document.getElementById("resultStatus");
       status.style.display = "block";
       status.className = "status-box loading";
-      status.innerHTML = '<span class="spinner"></span>処理中...';
-
+      status.innerHTML = '<span class="spinner"></span>送信中...';
       try {
-        const json = await callGasApi(action, { lineUserId: lineUserId });
-        if (json.success) {
+        const res = await callGas(action, { lineUserId });
+        if (res.success) {
           status.className = "status-box success";
-          status.textContent = "✅ 処理が完了しました。";
+          status.innerText = "✅ 反映しました。";
           setTimeout(() => {
             status.style.display = "none";
-            checkDormMotherStatus();
+            checkDormStatus();
           }, 1500);
         } else {
-          throw new Error(json.message);
+          throw new Error(res.message);
         }
-      } catch (err) {
+      } catch (e) {
         status.className = "status-box error";
-        status.textContent = "❌ 失敗: " + err.message;
+        status.innerText = "❌ 失敗: " + e.message;
       }
     }
 
