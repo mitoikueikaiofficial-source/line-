@@ -12,12 +12,14 @@
       --primary-color: #06C755;
       --primary-hover: #05b04a;
       --bg-gradient: linear-gradient(135deg, #06C755 0%, #00a844 100%);
+      --text-main: #111111;
+      --text-gray: #444444;
     }
 
     body.mode-dorm-mother {
-      --primary-color: #F57C00;
-      --primary-hover: #e65100;
-      --bg-gradient: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+      --primary-color: #E65100;
+      --primary-hover: #BF360C;
+      --bg-gradient: linear-gradient(135deg, #F57C00 0%, #E65100 100%);
     }
 
     * {
@@ -27,80 +29,124 @@
     }
 
     body {
-      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
       background: var(--bg-gradient);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 16px;
+      font-size: 18px; /* Base size for elderly */
+      line-height: 1.6;
     }
 
     .card {
       background: #fff;
-      border-radius: 20px;
-      padding: 36px 28px;
+      border-radius: 24px;
+      padding: 40px 24px;
       width: 100%;
-      max-width: 360px;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+      max-width: 400px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
       text-align: center;
       position: relative;
     }
 
     .logo {
-      font-size: 48px;
-      margin-bottom: 8px;
+      font-size: 64px;
+      margin-bottom: 12px;
     }
 
     h1 {
-      font-size: 19px;
-      font-weight: 700;
-      color: #111;
-      margin-bottom: 6px;
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--text-main);
+      margin-bottom: 12px;
     }
 
     .subtitle {
-      font-size: 13px;
-      color: #666;
-      margin-bottom: 28px;
+      font-size: 16px;
+      color: var(--text-gray);
+      margin-bottom: 32px;
       line-height: 1.5;
+      font-weight: 500;
     }
 
     .info-box {
       background: #f0faf4;
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-bottom: 20px;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
       text-align: left;
-      font-size: 13px;
-      color: #333;
+      font-size: 16px;
+      color: var(--text-main);
       line-height: 1.7;
+      border: 1px solid rgba(0,0,0,0.05);
     }
 
     body.mode-dorm-mother .info-box {
-      background: #fff8e1;
+      background: #FFFDE7;
+      border-color: #FFF9C4;
     }
 
     .info-box strong {
       color: var(--primary-color);
+      font-size: 18px;
+    }
+
+    .dorm-list {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed #ddd;
+    }
+    .dorm-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      font-weight: bold;
+      color: #333;
+      border-bottom: 1px solid #efefef;
+    }
+    .dorm-item:last-child {
+      border-bottom: none;
+    }
+    .dorm-item .me-badge {
+      font-size: 12px;
+      background: var(--primary-color);
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+    }
+    .replace-btn {
+      background: #D32F2F;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
     }
 
     .btn {
       width: 100%;
-      padding: 15px;
+      padding: 18px;
       background: var(--primary-color);
       color: #fff;
-      font-size: 16px;
-      font-weight: 700;
+      font-size: 20px;
+      font-weight: 900;
       border: none;
-      border-radius: 12px;
+      border-radius: 16px;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-      margin-bottom: 10px;
+      transition: all 0.2s;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
     .btn:hover {
       background: var(--primary-hover);
+      transform: translateY(-2px);
     }
 
     .btn:active {
@@ -108,74 +154,69 @@
     }
 
     .btn:disabled {
-      background: #ccc;
+      background: #bbb;
       cursor: not-allowed;
+      box-shadow: none;
     }
 
     .status-box {
-      margin-top: 18px;
-      font-size: 14px;
+      margin-top: 24px;
+      font-size: 18px;
       line-height: 1.6;
-      padding: 12px;
-      border-radius: 8px;
+      padding: 16px;
+      border-radius: 12px;
+      font-weight: bold;
     }
 
     .status-box.success {
-      background-color: #e8f5e9;
-      color: #2e7d32;
-      font-weight: 700;
+      background-color: #E8F5E9;
+      color: #2E7D32;
     }
 
     .status-box.error {
-      background-color: #ffebee;
-      color: #e53e3e;
-      font-weight: 600;
+      background-color: #FFEBEE;
+      color: #C62828;
     }
 
     .spinner {
       display: inline-block;
-      width: 18px;
-      height: 18px;
-      border: 2px solid #ccc;
+      width: 24px;
+      height: 24px;
+      border: 3px solid #ccc;
       border-top-color: var(--primary-color);
       border-radius: 50%;
-      animation: spin 0.7s linear infinite;
+      animation: spin 0.8s linear infinite;
       vertical-align: middle;
-      margin-right: 6px;
+      margin-right: 8px;
     }
 
     @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
+      to { transform: rotate(360deg); }
     }
 
-    /* 手動切替ボタン */
     #manualSwitch {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      font-size: 10px;
-      color: #ccc;
-      padding: 2px 6px;
-      border: 1px solid #eee;
-      border-radius: 4px;
+      top: 12px;
+      right: 12px;
+      font-size: 12px;
+      color: #999;
+      padding: 4px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
       cursor: pointer;
       background: #fff;
     }
 
-    /* デバッグ表示 */
     #debug {
-      margin-top: 24px;
-      padding: 10px;
-      background: #f8f8f8;
-      border: 1px solid #eee;
+      margin-top: 32px;
+      padding: 12px;
+      background: #F5F5F5;
       border-radius: 8px;
-      font-size: 10px;
-      color: #888;
+      font-size: 11px;
+      color: #777;
       text-align: left;
-      word-break: break-all;
-      max-height: 100px;
+       word-break: break-all;
+      max-height: 120px;
       overflow-y: auto;
     }
   </style>
@@ -194,7 +235,7 @@
       <div id="status" class="status-box">
         <span class="spinner"></span> 読み込み中...
       </div>
-      <button id="startBtn" class="btn" style="display: none; margin-top: 15px;" onclick="startFlow()">開始する</button>
+      <button id="startBtn" class="btn" style="display: none; margin-top: 15px;" onclick="startFlow()">次へ進む</button>
     </div>
 
     <!-- 2. コンテンツセクション -->
@@ -202,20 +243,21 @@
       <!-- 通常モード: OTP入力 -->
       <div id="userSection" style="display: none;">
         <div class="info-box">
-          <strong>使い方</strong><br>
-          ① Slackで「🔗 LINEと連携する」ボタンを押す<br>
-          ② 届いた4桁のコードを入力する<br>
-          ③ 「連携する」ボタンを押すと完了！
+          <strong style="display:block; margin-bottom:8px;">連携の手順</strong>
+          ① Slackで届いた<strong>4桁の数字</strong>を確認する<br>
+          ② その数字を下の枠に入力する<br>
+          ③ <strong>「連携する」</strong>ボタンを押す
         </div>
-        <input type="text" id="otp" maxlength="4" inputmode="numeric" placeholder="0000" style="width:100%; padding:14px; font-size:24px; letter-spacing:10px; text-align:center; border:2px solid #ddd; border-radius:12px; margin-bottom:15px;">
+        <input type="text" id="otp" maxlength="4" inputmode="numeric" placeholder="0000" style="width:100%; padding:16px; font-size:32px; letter-spacing:12px; text-align:center; border:3px solid #ddd; border-radius:16px; margin-bottom:20px; font-weight:bold; color:var(--text-main);">
         <button id="otpSubmitBtn" class="btn" onclick="submitOtp()">連携する</button>
       </div>
 
       <!-- 寮母モード -->
       <div id="dormSection" style="display: none;">
         <div class="info-box">
-          <strong id="dormInfoTitle">ご案内</strong><br>
-          <span id="dormInfoContent">読み込み中...</span>
+          <strong id="dormInfoTitle" style="display:block; margin-bottom:8px;">登録状況</strong>
+          <div id="dormInfoContent">読み込み中...</div>
+          <div id="dormList" class="dorm-list" style="display:none;"></div>
         </div>
         <button id="dormActionBtn" class="btn" onclick="handleDormAction()">反映する</button>
       </div>
@@ -229,13 +271,12 @@
   </div>
 
   <script>
-    /**
-     * 設定
-     */
     const LIFF_ID = "2009629480-rTF4dms1";
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbx23wbGW0ENBzcoO-D_oIYrZONNDPBZvCdzrsPch_7_ozpaArKWQG0OauxTDMUl8FHRSA/exec";
+    // doGet で注入される template.gasUrl を優先使用
+    const GAS_ENDPOINT = "<?= gasUrl ?>" || "https://script.google.com/macros/s/AKfycbx23wbGW0ENBzcoO-D_oIYrZONNDPBZvCdzrsPch_7_ozpaArKWQG0OauxTDMUl8FHRSA/exec";
 
     let lineUserId = null;
+    let userDisplayName = "不明";
     let isDormMotherMode = false;
     let currentDormStatus = "none";
 
@@ -245,14 +286,9 @@
       console.log(msg);
     }
 
-    /**
-     * モード判定（最優先）
-     */
     function detectMode() {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("mode") === "dorm_mother") return true;
-      if (window.location.href.includes("mode=dorm_mother")) return true;
-      return false;
+      return params.get("mode") === "dorm_mother" || window.location.href.includes("mode=dorm_mother");
     }
 
     function toggleModeManually() {
@@ -267,7 +303,7 @@
         document.getElementById("pageTitle").innerText = "寮母設定 | 食数投票システム";
         document.getElementById("headerTitle").innerText = "寮母さん設定";
         document.getElementById("pageSubtitle").innerHTML = "投票結果の受け取り設定を行います";
-        document.getElementById("logo").innerText = "👩‍🍳";
+        document.getElementById("logo").innerText = "👵";
       } else {
         document.body.classList.remove("mode-dorm-mother");
         document.getElementById("pageTitle").innerText = "LINE連携 | 食数投票システム";
@@ -277,9 +313,6 @@
       }
     }
 
-    /**
-     * 初期化
-     */
     async function init() {
       isDormMotherMode = detectMode();
       applyUI();
@@ -297,12 +330,13 @@
 
         const profile = await liff.getProfile();
         lineUserId = profile.userId;
+        userDisplayName = profile.displayName;
         log("User: " + profile.displayName);
 
-        status.innerHTML = `<p style="color:#2e7d32">✅ LINEを確認しました</p><strong>${profile.displayName}</strong> さん`;
+        status.innerHTML = `<p style="color:#2e7d32">✅ LINEを確認しました</p><div style="font-size:20px; margin-top:8px;"><strong>${profile.displayName}</strong> さん</div>`;
         document.getElementById("startBtn").style.display = "block";
 
-        if (!isDormMotherMode) startFlow(); // ユーザー連携は自動で次へ
+        if (!isDormMotherMode) startFlow(); 
       } catch (err) {
         log("Error: " + err.message);
         status.className = "status-box error";
@@ -321,37 +355,26 @@
       }
     }
 
-    /**
-     * 通信
-     */
     async function callGas(action, extra = {}) {
       const url = new URL(GAS_ENDPOINT);
       url.searchParams.append("action", action);
       for (const key in extra) {
         url.searchParams.append(key, extra[key]);
       }
-
-      log("API (GET): " + action);
       
       try {
         const response = await fetch(url.toString(), {
           method: "GET",
           redirect: "follow"
         });
-
         if (!response.ok) throw new Error("HTTP " + response.status);
-        const json = await response.json();
-        log("Done");
-        return json;
+        return await response.json();
       } catch (err) {
         log("API Error: " + err.message);
         throw err;
       }
     }
 
-    /**
-     * ユーザー連携
-     */
     async function submitOtp() {
       const otp = document.getElementById("otp").value.trim();
       const status = document.getElementById("resultStatus");
@@ -363,15 +386,15 @@
       }
       status.style.display = "block";
       status.className = "status-box loading";
-      status.innerHTML = '<span class="spinner"></span>処理中...';
+      status.innerHTML = '<span class="spinner"></span>通信中...';
       try {
         const res = await callGas("line_link", { otp, lineUserId });
         if (res.success) {
           status.className = "status-box success";
-          status.innerText = "🎉 連携完了！Slackに戻ってください。";
+          status.innerText = "🎉 連携が完了しました！\nSlackに戻ってください。";
         } else {
           status.className = "status-box error";
-          status.innerText = res.message || "❌ 失敗";
+          status.innerText = res.message || "❌ 失敗しました";
         }
       } catch (e) {
         status.className = "status-box error";
@@ -379,37 +402,64 @@
       }
     }
 
-    /**
-     * 寮母設定
-     */
     async function checkDormStatus() {
       const content = document.getElementById("dormInfoContent");
+      const listEl = document.getElementById("dormList");
       const btn = document.getElementById("dormActionBtn");
       content.innerHTML = '<span class="spinner"></span>確認中...';
+      listEl.innerHTML = "";
+      listEl.style.display = "none";
       btn.disabled = true;
+
       try {
         const res = await callGas("get_dorm_mother_status");
         if (res.success) {
-          if (res.dormMotherId === lineUserId) {
-            currentDormStatus = "registered_self";
-            content.innerHTML = "現在、あなたが登録されています。";
-            btn.innerText = "登録を解除する";
-            btn.style.background = "#e53e3e";
-          } else if (res.dormMotherId) {
-            currentDormStatus = "registered_other";
-            content.innerHTML = "現在、別の方が登録されています。上書きしますか？";
-            btn.innerText = "登録を上書きする";
-            btn.style.background = "var(--primary-color)";
+          const list = res.dormMotherList || [];
+          const isMe = list.some(u => u.id === lineUserId);
+          
+          if (list.length > 0) {
+            content.innerHTML = isMe 
+              ? `現在 <strong>${list.length}名</strong> が登録されています。`
+              : `現在 <strong>${list.length}名</strong> が登録されています。下の「交代」ボタンから入れ替えができます。`;
+            
+            listEl.style.display = "block";
+            list.forEach(u => {
+              const item = document.createElement("div");
+              item.className = "dorm-item";
+              
+              let html = `<span>・${u.name}</span>`;
+              if (u.id === lineUserId) {
+                html += '<span class="me-badge">自分</span>';
+              } else if (list.length >= 2 && !isMe) {
+                // 上限に達していて、かつ自分が未登録なら「交代」ボタンを出す
+                html += `<button class="replace-btn" onclick="handleReplaceDorm('${u.id}', '${u.name}')">交代</button>`;
+              }
+              item.innerHTML = html;
+              listEl.appendChild(item);
+            });
           } else {
-            currentDormStatus = "none";
-            content.innerHTML = "あなたが寮母さんとして登録し、集計を受け取ります。";
-            btn.innerText = "登録する";
+            content.innerHTML = "現在、登録されている寮母さんはいません。";
+          }
+
+          if (isMe) {
+            currentDormStatus = "registered_self";
+            btn.innerText = "自分の登録を解除する";
+            btn.style.background = "#D32F2F";
+            btn.style.display = "block";
+          } else if (list.length >= 2) {
+            currentDormStatus = "full";
+            btn.style.display = "none"; // ボタンを隠すかわりにリスト内の「交代」を使わせる
+          } else {
+            currentDormStatus = "can_register";
+            btn.innerText = "自分を登録する";
             btn.style.background = "var(--primary-color)";
+            btn.style.display = "block";
           }
           btn.disabled = false;
         }
       } catch (e) {
-        content.innerText = "❌ エラー: " + e.message;
+        content.innerText = "❌ 接続エラー";
+        log(e.message);
       }
     }
 
@@ -418,12 +468,44 @@
       const status = document.getElementById("resultStatus");
       status.style.display = "block";
       status.className = "status-box loading";
-      status.innerHTML = '<span class="spinner"></span>送信中...';
+      status.innerHTML = '<span class="spinner"></span>通信中...';
       try {
-        const res = await callGas(action, { lineUserId });
+        const res = await callGas(action, { lineUserId, displayName: userDisplayName });
         if (res.success) {
           status.className = "status-box success";
-          status.innerText = "✅ 反映しました。";
+          status.innerText = (action === "set_dorm_mother") ? "✅ 登録しました" : "✅ 解除しました";
+          setTimeout(() => {
+            status.style.display = "none";
+            checkDormStatus();
+          }, 1500);
+        } else {
+          throw new Error(res.message);
+        }
+      } catch (e) {
+        status.className = "status-box error";
+        status.innerText = "❌ 失敗: " + e.message;
+      }
+    }
+
+    async function handleReplaceDorm(targetId, targetName) {
+      if (!confirm(`現在登録されている ${targetName} さんと交代して、あなたが寮母として登録しますか？`)) {
+        return;
+      }
+
+      const status = document.getElementById("resultStatus");
+      status.style.display = "block";
+      status.className = "status-box loading";
+      status.innerHTML = '<span class="spinner"></span>通信中...';
+      
+      try {
+        const res = await callGas("replace_dorm_mother", { 
+          targetLineUserId: targetId, 
+          lineUserId: lineUserId, 
+          displayName: userDisplayName 
+        });
+        if (res.success) {
+          status.className = "status-box success";
+          status.innerText = "✅ 交代しました";
           setTimeout(() => {
             status.style.display = "none";
             checkDormStatus();
