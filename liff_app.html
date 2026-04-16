@@ -416,6 +416,16 @@
         if (res.success) {
           const list = res.dormMotherList || [];
           const isMe = list.some(u => u.id === lineUserId);
+
+          // 自分が登録済みだが名前が古い場合、バックグラウンドで名前を自動更新
+          if (isMe) {
+            const myEntry = list.find(u => u.id === lineUserId);
+            if (myEntry && myEntry.name !== userDisplayName) {
+              log("名前を自動更新: " + myEntry.name + " → " + userDisplayName);
+              callGas("set_dorm_mother", { lineUserId, displayName: userDisplayName }).catch(() => {});
+              myEntry.name = userDisplayName; // 画面表示も即時反映
+            }
+          }
           
           if (list.length > 0) {
             content.innerHTML = isMe 
