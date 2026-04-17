@@ -14,6 +14,7 @@
       --bg-gradient: linear-gradient(135deg, #06C755 0%, #00a844 100%);
       --text-main: #111111;
       --text-gray: #444444;
+      --error-color: #D32F2F;
     }
 
     body.mode-dorm-mother {
@@ -36,7 +37,7 @@
       align-items: center;
       justify-content: center;
       padding: 16px;
-      font-size: 18px; /* Base size for elderly */
+      font-size: 18px;
       line-height: 1.6;
     }
 
@@ -45,7 +46,7 @@
       border-radius: 24px;
       padding: 40px 24px;
       width: 100%;
-      max-width: 400px;
+      max-width: 440px;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
       text-align: center;
       position: relative;
@@ -93,40 +94,65 @@
       font-size: 18px;
     }
 
-    .dorm-list {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px dashed #ddd;
+    /* 寮母用スロットUI */
+    .slot-container {
+      margin-top: 16px;
+      display: grid;
+      gap: 16px;
     }
-    .dorm-item {
+    .slot {
+      background: #f9f9f9;
+      border: 2px solid #eee;
+      border-radius: 16px;
+      padding: 16px;
+      text-align: left;
+      transition: all 0.3s;
+    }
+    .slot.active {
+      border-color: var(--primary-color);
+      background: #fff;
+    }
+    .slot-header {
+      font-size: 14px;
+      color: #777;
+      margin-bottom: 8px;
+      font-weight: bold;
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      font-weight: bold;
+    }
+    .slot-user {
+      font-size: 18px;
+      font-weight: 900;
       color: #333;
-      border-bottom: 1px solid #efefef;
+      margin-bottom: 12px;
+      min-height: 27px;
     }
-    .dorm-item:last-child {
-      border-bottom: none;
+    .slot-user.empty {
+      color: #bbb;
+      font-weight: normal;
+      font-style: italic;
     }
-    .dorm-item .me-badge {
-      font-size: 12px;
-      background: var(--primary-color);
-      color: #fff;
-      padding: 2px 6px;
-      border-radius: 4px;
-      margin-left: 8px;
-    }
-    .replace-btn {
-      background: #D32F2F;
-      color: #fff;
+    .slot-action-btn {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
       border: none;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 14px;
       font-weight: bold;
       cursor: pointer;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    .btn-register {
+      background: var(--primary-color);
+      color: #fff;
+    }
+    .btn-replace {
+      background: #FF9800;
+      color: #fff;
+    }
+    .btn-unregister {
+      background: #D32F2F;
+      color: #fff;
     }
 
     .btn {
@@ -144,19 +170,9 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
-    .btn:hover {
+    .btn:hover:not(:disabled) {
       background: var(--primary-hover);
       transform: translateY(-2px);
-    }
-
-    .btn:active {
-      transform: scale(0.98);
-    }
-
-    .btn:disabled {
-      background: #bbb;
-      cursor: not-allowed;
-      box-shadow: none;
     }
 
     .status-box {
@@ -168,15 +184,8 @@
       font-weight: bold;
     }
 
-    .status-box.success {
-      background-color: #E8F5E9;
-      color: #2E7D32;
-    }
-
-    .status-box.error {
-      background-color: #FFEBEE;
-      color: #C62828;
-    }
+    .status-box.success { background-color: #E8F5E9; color: #2E7D32; }
+    .status-box.error { background-color: #FFEBEE; color: #C62828; }
 
     .spinner {
       display: inline-block;
@@ -190,9 +199,7 @@
       margin-right: 8px;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     #manualSwitch {
       position: absolute;
@@ -215,7 +222,7 @@
       font-size: 11px;
       color: #777;
       text-align: left;
-       word-break: break-all;
+      word-break: break-all;
       max-height: 120px;
       overflow-y: auto;
     }
@@ -233,7 +240,7 @@
     <!-- 1. 初期化・ログインセクション -->
     <div id="initSection">
       <div id="status" class="status-box">
-        <span class="spinner"></span> 読み込み中...
+        <span class="spinner"></span> LINE認証中...
       </div>
       <button id="startBtn" class="btn" style="display: none; margin-top: 15px;" onclick="startFlow()">次へ進む</button>
     </div>
@@ -255,11 +262,26 @@
       <!-- 寮母モード -->
       <div id="dormSection" style="display: none;">
         <div class="info-box">
-          <strong id="dormInfoTitle" style="display:block; margin-bottom:8px;">登録状況</strong>
-          <div id="dormInfoContent">読み込み中...</div>
-          <div id="dormList" class="dorm-list" style="display:none;"></div>
+          <strong style="display:block; margin-bottom:8px;">👵 寮母登録（通知設定）</strong>
+          下の「枠」を選んで、あなたが食数通知を受け取る寮母として登録・交代します。
         </div>
-        <button id="dormActionBtn" class="btn" onclick="handleDormAction()">反映する</button>
+
+        <div id="slotContainer" class="slot-container">
+          <!-- スロット1 -->
+          <div id="slot1" class="slot">
+            <div class="slot-header"><span>1人目の枠</span><span class="slot-badge"></span></div>
+            <div id="slotName1" class="slot-user empty">読み込み中...</div>
+            <div id="slotAction1"></div>
+          </div>
+          <!-- スロット2 -->
+          <div id="slot2" class="slot">
+            <div class="slot-header"><span>2人目の枠</span><span class="slot-badge"></span></div>
+            <div id="slotName2" class="slot-user empty">読み込み中...</div>
+            <div id="slotAction2"></div>
+          </div>
+        </div>
+
+        <p style="margin-top:20px; font-size:14px; color:#666;">※最大2名まで登録可能です。<br>登録するとSlackの最新集計が届きます。</p>
       </div>
 
       <!-- 共通ステータス -->
@@ -272,13 +294,11 @@
 
   <script>
     const LIFF_ID = "2009629480-rTF4dms1";
-    // doGet で注入される template.gasUrl を優先使用
     const GAS_ENDPOINT = "<?= gasUrl ?>" || "https://script.google.com/macros/s/AKfycbx23wbGW0ENBzcoO-D_oIYrZONNDPBZvCdzrsPch_7_ozpaArKWQG0OauxTDMUl8FHRSA/exec";
 
     let lineUserId = null;
-    let userDisplayName = "不明";
+    let userDisplayName = ""; // 初期値は空にする
     let isDormMotherMode = false;
-    let currentDormStatus = "none";
 
     function log(msg) {
       const dbg = document.getElementById("debug");
@@ -294,7 +314,10 @@
     function toggleModeManually() {
       isDormMotherMode = !isDormMotherMode;
       applyUI();
-      log("Manual switch: " + isDormMotherMode);
+      log("Manual switch: mode=" + isDormMotherMode);
+      if (document.getElementById("contentSection").style.display === "block") {
+        startFlow();
+      }
     }
 
     function applyUI() {
@@ -319,26 +342,32 @@
       
       const status = document.getElementById("status");
       try {
-        log("Init Start...");
+        log("LIFF Init...");
         await liff.init({ liffId: LIFF_ID });
         
         if (!liff.isLoggedIn()) {
-          log("Logged out, login...");
+          log("Redirect to login...");
           liff.login();
           return;
         }
 
         const profile = await liff.getProfile();
         lineUserId = profile.userId;
-        userDisplayName = profile.displayName;
-        log("User: " + profile.displayName);
+        userDisplayName = profile.displayName || "名前なし";
+        log("Login Success: " + userDisplayName);
 
-        status.innerHTML = `<p style="color:#2e7d32">✅ LINEを確認しました</p><div style="font-size:20px; margin-top:8px;"><strong>${profile.displayName}</strong> さん</div>`;
-        document.getElementById("startBtn").style.display = "block";
-
-        if (!isDormMotherMode) startFlow(); 
+        status.innerHTML = `<p style="color:#2e7d32">✅ LINE認証完了</p><div style="font-size:20px; margin-top:8px;"><strong>${userDisplayName}</strong> さん</div>`;
+        
+        // 寮母モードなら自動遷移、一般モードなら一応ボタンを出す（自動でも良いが）
+        if (isDormMotherMode) {
+          log("Dorm mode detected. Auto starting...");
+          setTimeout(startFlow, 800);
+        } else {
+          document.getElementById("startBtn").style.display = "block";
+          // startFlow(); // 一般モードも自動にして良いならここを有効化
+        }
       } catch (err) {
-        log("Error: " + err.message);
+        log("Critical Error: " + err.message);
         status.className = "status-box error";
         status.innerText = "⚠️ 接続失敗: " + err.message;
       }
@@ -348,9 +377,11 @@
       document.getElementById("initSection").style.display = "none";
       document.getElementById("contentSection").style.display = "block";
       if (isDormMotherMode) {
+        document.getElementById("userSection").style.display = "none";
         document.getElementById("dormSection").style.display = "block";
         checkDormStatus();
       } else {
+        document.getElementById("dormSection").style.display = "none";
         document.getElementById("userSection").style.display = "block";
       }
     }
@@ -375,138 +406,96 @@
       }
     }
 
-    async function submitOtp() {
-      const otp = document.getElementById("otp").value.trim();
-      const status = document.getElementById("resultStatus");
-      if (!/^\d{4}$/.test(otp)) {
-        status.style.display = "block";
-        status.className = "status-box error";
-        status.innerText = "❌ 4桁を入力してください";
-        return;
-      }
-      status.style.display = "block";
-      status.className = "status-box loading";
-      status.innerHTML = '<span class="spinner"></span>通信中...';
-      try {
-        const res = await callGas("line_link", { otp, lineUserId });
-        if (res.success) {
-          status.className = "status-box success";
-          status.innerText = "🎉 連携が完了しました！\nSlackに戻ってください。";
-        } else {
-          status.className = "status-box error";
-          status.innerText = res.message || "❌ 失敗しました";
-        }
-      } catch (e) {
-        status.className = "status-box error";
-        status.innerText = "❌ エラー: " + e.message;
-      }
-    }
-
     async function checkDormStatus() {
-      const content = document.getElementById("dormInfoContent");
-      const listEl = document.getElementById("dormList");
-      const btn = document.getElementById("dormActionBtn");
-      content.innerHTML = '<span class="spinner"></span>確認中...';
-      listEl.innerHTML = "";
-      listEl.style.display = "none";
-      btn.disabled = true;
+      const slots = [
+        { name: document.getElementById("slotName1"), action: document.getElementById("slotAction1"), box: document.getElementById("slot1") },
+        { name: document.getElementById("slotName2"), action: document.getElementById("slotAction2"), box: document.getElementById("slot2") }
+      ];
+      
+      slots.forEach(s => {
+        s.name.innerText = "確認中...";
+        s.name.className = "slot-user empty";
+        s.action.innerHTML = "";
+        s.box.classList.remove("active");
+      });
 
       try {
         const res = await callGas("get_dorm_mother_status");
         if (res.success) {
           const list = res.dormMotherList || [];
-          const isMe = list.some(u => u.id === lineUserId);
+          log("Status loaded. Found: " + list.length);
 
-          // 自分が登録済みだが名前が古い場合、バックグラウンドで名前を自動更新
-          if (isMe) {
-            const myEntry = list.find(u => u.id === lineUserId);
-            if (myEntry && myEntry.name !== userDisplayName) {
-              log("名前を自動更新: " + myEntry.name + " → " + userDisplayName);
+          // 名前の自動修復（自分が入っているのに名前が不正な場合）
+          const myEntry = list.find(u => u.id === lineUserId);
+          if (myEntry && userDisplayName && userDisplayName !== "名前なし") {
+            const needsUpdate = (myEntry.name === "不明なユーザー" || myEntry.name === "登録済み（名前不明）" || myEntry.name !== userDisplayName);
+            if (needsUpdate) {
+              log("Name Sync: " + myEntry.name + " -> " + userDisplayName);
               callGas("set_dorm_mother", { lineUserId, displayName: userDisplayName }).catch(() => {});
-              myEntry.name = userDisplayName; // 画面表示も即時反映
+              myEntry.name = userDisplayName;
             }
           }
-          
-          if (list.length > 0) {
-            content.innerHTML = isMe 
-              ? `現在 <strong>${list.length}名</strong> が登録されています。`
-              : `現在 <strong>${list.length}名</strong> が登録されています。下の「交代」ボタンから入れ替えができます。`;
-            
-            listEl.style.display = "block";
-            list.forEach(u => {
-              const item = document.createElement("div");
-              item.className = "dorm-item";
-              
-              let html = `<span>・${u.name}</span>`;
-              if (u.id === lineUserId) {
-                html += '<span class="me-badge">自分</span>';
-              } else if (list.length >= 2 && !isMe) {
-                // 上限に達していて、かつ自分が未登録なら「交代」ボタンを出す
-                html += `<button class="replace-btn" onclick="handleReplaceDorm('${u.id}', '${u.name}')">交代</button>`;
-              }
-              item.innerHTML = html;
-              listEl.appendChild(item);
-            });
-          } else {
-            content.innerHTML = "現在、登録されている寮母さんはいません。";
-          }
 
-          if (isMe) {
-            currentDormStatus = "registered_self";
-            btn.innerText = "自分の登録を解除する";
-            btn.style.background = "#D32F2F";
-            btn.style.display = "block";
-          } else if (list.length >= 2) {
-            currentDormStatus = "full";
-            btn.style.display = "none"; // ボタンを隠すかわりにリスト内の「交代」を使わせる
-          } else {
-            currentDormStatus = "can_register";
-            btn.innerText = "自分を登録する";
-            btn.style.background = "var(--primary-color)";
-            btn.style.display = "block";
+          // スロット表示の更新
+          for (let i = 0; i < 2; i++) {
+            const user = list[i];
+            const slot = slots[i];
+            
+            if (user) {
+              slot.name.innerText = user.name;
+              slot.name.className = "slot-user";
+              if (user.id === lineUserId) {
+                slot.box.classList.add("active");
+                slot.action.innerHTML = `<button class="slot-action-btn btn-unregister" onclick="handleDormAction('clear_dorm_mother')">自分の登録を解除する</button>`;
+              } else {
+                slot.action.innerHTML = `<button class="slot-action-btn btn-replace" onclick="handleReplaceDorm('${user.id}', '${user.name}')">${user.name} さんと交代する</button>`;
+              }
+            } else {
+              slot.name.innerText = "(空き枠)";
+              slot.name.className = "slot-user empty";
+              slot.action.innerHTML = `<button class="slot-action-btn btn-register" onclick="handleDormAction('set_dorm_mother')">自分をここに登録する</button>`;
+            }
           }
-          btn.disabled = false;
         }
       } catch (e) {
-        content.innerText = "❌ 接続エラー";
+        slots.forEach(s => s.name.innerText = "取得失敗");
         log(e.message);
       }
     }
 
-    async function handleDormAction() {
-      const action = (currentDormStatus === "registered_self") ? "clear_dorm_mother" : "set_dorm_mother";
-      const status = document.getElementById("resultStatus");
-      status.style.display = "block";
-      status.className = "status-box loading";
-      status.innerHTML = '<span class="spinner"></span>通信中...';
+    async function handleDormAction(action) {
+      if (!lineUserId || !userDisplayName) {
+        alert("プロフィールを待機中です。しばらくお待ちください。");
+        return;
+      }
+
+      const confirmMsg = (action === "set_dorm_mother") 
+        ? "あなたを新しい寮母として登録しますか？" 
+        : "寮母の登録を解除します。よろしいですか？";
+      
+      if (!confirm(confirmMsg)) return;
+
+      showProcessing();
       try {
         const res = await callGas(action, { lineUserId, displayName: userDisplayName });
         if (res.success) {
-          status.className = "status-box success";
-          status.innerText = (action === "set_dorm_mother") ? "✅ 登録しました" : "✅ 解除しました";
-          setTimeout(() => {
-            status.style.display = "none";
-            checkDormStatus();
-          }, 1500);
+          showResult("success", action === "set_dorm_mother" ? "✅ 登録が完了しました" : "✅ 解除が完了しました");
+          setTimeout(() => { hideResult(); checkDormStatus(); }, 1500);
         } else {
           throw new Error(res.message);
         }
       } catch (e) {
-        status.className = "status-box error";
-        status.innerText = "❌ 失敗: " + e.message;
+        showResult("error", "❌ 失敗: " + e.message);
       }
     }
 
     async function handleReplaceDorm(targetId, targetName) {
+      if (!lineUserId || !userDisplayName) return;
       if (!confirm(`現在登録されている ${targetName} さんと交代して、あなたが寮母として登録しますか？`)) {
         return;
       }
 
-      const status = document.getElementById("resultStatus");
-      status.style.display = "block";
-      status.className = "status-box loading";
-      status.innerHTML = '<span class="spinner"></span>通信中...';
-      
+      showProcessing();
       try {
         const res = await callGas("replace_dorm_mother", { 
           targetLineUserId: targetId, 
@@ -514,18 +503,49 @@
           displayName: userDisplayName 
         });
         if (res.success) {
-          status.className = "status-box success";
-          status.innerText = "✅ 交代しました";
-          setTimeout(() => {
-            status.style.display = "none";
-            checkDormStatus();
-          }, 1500);
+          showResult("success", "✅ 交代が完了しました");
+          setTimeout(() => { hideResult(); checkDormStatus(); }, 1500);
         } else {
           throw new Error(res.message);
         }
       } catch (e) {
-        status.className = "status-box error";
-        status.innerText = "❌ 失敗: " + e.message;
+        showResult("error", "❌ 失敗: " + e.message);
+      }
+    }
+
+    // --- 補助UI関数 ---
+    function showProcessing() {
+      const s = document.getElementById("resultStatus");
+      s.style.display = "block";
+      s.className = "status-box loading";
+      s.innerHTML = '<span class="spinner"></span> 通信中...';
+    }
+    function showResult(type, msg) {
+      const s = document.getElementById("resultStatus");
+      s.style.display = "block";
+      s.className = "status-box " + type;
+      s.innerText = msg;
+    }
+    function hideResult() {
+      document.getElementById("resultStatus").style.display = "none";
+    }
+
+    async function submitOtp() {
+      const otp = document.getElementById("otp").value.trim();
+      if (!/^\d{4}$/.test(otp)) {
+        showResult("error", "❌ 4桁を入力してください");
+        return;
+      }
+      showProcessing();
+      try {
+        const res = await callGas("line_link", { otp, lineUserId });
+        if (res.success) {
+          showResult("success", "🎉 連携が完了しました！\nSlackに戻ってください。");
+        } else {
+          showResult("error", res.message || "❌ 失敗しました");
+        }
+      } catch (e) {
+        showResult("error", "❌ エラー: " + e.message);
       }
     }
 
