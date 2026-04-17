@@ -81,7 +81,7 @@
       font-size: 16px;
       color: var(--text-main);
       line-height: 1.7;
-      border: 1px solid rgba(0,0,0,0.05);
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     body.mode-dorm-mother .info-box {
@@ -100,6 +100,7 @@
       display: grid;
       gap: 16px;
     }
+
     .slot {
       background: #f9f9f9;
       border: 2px solid #eee;
@@ -108,10 +109,12 @@
       text-align: left;
       transition: all 0.3s;
     }
+
     .slot.active {
       border-color: var(--primary-color);
       background: #fff;
     }
+
     .slot-header {
       font-size: 14px;
       color: #777;
@@ -120,6 +123,7 @@
       display: flex;
       justify-content: space-between;
     }
+
     .slot-user {
       font-size: 18px;
       font-weight: 900;
@@ -127,11 +131,13 @@
       margin-bottom: 12px;
       min-height: 27px;
     }
+
     .slot-user.empty {
       color: #bbb;
       font-weight: normal;
       font-style: italic;
     }
+
     .slot-action-btn {
       width: 100%;
       padding: 10px;
@@ -142,14 +148,17 @@
       font-size: 15px;
       transition: all 0.2s;
     }
+
     .btn-register {
       background: var(--primary-color);
       color: #fff;
     }
+
     .btn-replace {
       background: #FF9800;
       color: #fff;
     }
+
     .btn-unregister {
       background: #D32F2F;
       color: #fff;
@@ -167,7 +176,7 @@
       cursor: pointer;
       transition: all 0.2s;
       margin-bottom: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     .btn:hover:not(:disabled) {
@@ -184,8 +193,15 @@
       font-weight: bold;
     }
 
-    .status-box.success { background-color: #E8F5E9; color: #2E7D32; }
-    .status-box.error { background-color: #FFEBEE; color: #C62828; }
+    .status-box.success {
+      background-color: #E8F5E9;
+      color: #2E7D32;
+    }
+
+    .status-box.error {
+      background-color: #FFEBEE;
+      color: #C62828;
+    }
 
     .spinner {
       display: inline-block;
@@ -199,7 +215,11 @@
       margin-right: 8px;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
 
     #manualSwitch {
       position: absolute;
@@ -232,7 +252,7 @@
 <body>
   <div class="card">
     <div id="manualSwitch" onclick="toggleModeManually()">🔧 表示切替</div>
-    
+
     <div id="logo" class="logo">🔗</div>
     <h1 id="headerTitle">LINEアカウント連携</h1>
     <p id="pageSubtitle" class="subtitle">食数投票システムとLINEを繋いで<br>通知・投票をより便利に！</p>
@@ -255,7 +275,8 @@
           ② その数字を下の枠に入力する<br>
           ③ <strong>「連携する」</strong>ボタンを押す
         </div>
-        <input type="text" id="otp" maxlength="4" inputmode="numeric" placeholder="0000" style="width:100%; padding:16px; font-size:32px; letter-spacing:12px; text-align:center; border:3px solid #ddd; border-radius:16px; margin-bottom:20px; font-weight:bold; color:var(--text-main);">
+        <input type="text" id="otp" maxlength="4" inputmode="numeric" placeholder="0000"
+          style="width:100%; padding:16px; font-size:32px; letter-spacing:12px; text-align:center; border:3px solid #ddd; border-radius:16px; margin-bottom:20px; font-weight:bold; color:var(--text-main);">
         <button id="otpSubmitBtn" class="btn" onclick="submitOtp()">連携する</button>
       </div>
 
@@ -281,7 +302,7 @@
           </div>
         </div>
 
-        <p style="margin-top:20px; font-size:14px; color:#666;">※最大2名まで登録可能です。<br>登録するとSlackの最新集計が届きます。</p>
+        <p style="margin-top:20px; font-size:14px; color:#666;">※最大2名まで登録可能です。<br>登録すると食数投票の最新集計が届きます。</p>
       </div>
 
       <!-- 共通ステータス -->
@@ -294,7 +315,11 @@
 
   <script>
     const LIFF_ID = "2009629480-rTF4dms1";
-    const GAS_ENDPOINT = "<?= gasUrl ?>" || "https://script.google.com/macros/s/AKfycbx23wbGW0ENBzcoO-D_oIYrZONNDPBZvCdzrsPch_7_ozpaArKWQG0OauxTDMUl8FHRSA/exec";
+    // GASのテンプレートタグが未置換（<?= ... ?> のまま）か空の場合は予備のURLを使用する
+    const rawUrl = "<?= gasUrl ?>";
+    const GAS_ENDPOINT = (rawUrl.indexOf("<?") === 0 || !rawUrl) 
+      ? "https://script.google.com/macros/s/AKfycbx23wbGW0ENBzcoO-D_oIYrZONNDPBZvCdzrsPch_7_ozpaArKWQG0OauxTDMUl8FHRSA/exec"
+      : rawUrl;
 
     let lineUserId = null;
     let userDisplayName = ""; // 初期値は空にする
@@ -324,7 +349,7 @@
       if (isDormMotherMode) {
         document.body.classList.add("mode-dorm-mother");
         document.getElementById("pageTitle").innerText = "寮母設定 | 食数投票システム";
-        document.getElementById("headerTitle").innerText = "寮母さん設定";
+        document.getElementById("headerTitle").innerText = "";
         document.getElementById("pageSubtitle").innerHTML = "投票結果の受け取り設定を行います";
         document.getElementById("logo").innerText = "👩‍🍳";
       } else {
@@ -339,12 +364,12 @@
     async function init() {
       isDormMotherMode = detectMode();
       applyUI();
-      
+
       const status = document.getElementById("status");
       try {
         log("LIFF Init...");
         await liff.init({ liffId: LIFF_ID });
-        
+
         if (!liff.isLoggedIn()) {
           log("Redirect to login...");
           liff.login();
@@ -357,7 +382,7 @@
         log("Login Success: " + userDisplayName);
 
         status.innerHTML = `<p style="color:#2e7d32">✅ LINE認証完了</p><div style="font-size:20px; margin-top:8px;"><strong>${userDisplayName}</strong> さん</div>`;
-        
+
         // 寮母モードなら自動遷移、一般モードなら一応ボタンを出す（自動でも良いが）
         if (isDormMotherMode) {
           log("Dorm mode detected. Auto starting...");
@@ -392,7 +417,7 @@
       for (const key in extra) {
         url.searchParams.append(key, extra[key]);
       }
-      
+
       try {
         const response = await fetch(url.toString(), {
           method: "GET",
@@ -411,7 +436,7 @@
         { name: document.getElementById("slotName1"), action: document.getElementById("slotAction1"), box: document.getElementById("slot1") },
         { name: document.getElementById("slotName2"), action: document.getElementById("slotAction2"), box: document.getElementById("slot2") }
       ];
-      
+
       slots.forEach(s => {
         s.name.innerText = "確認中...";
         s.name.className = "slot-user empty";
@@ -431,7 +456,7 @@
             const needsUpdate = (myEntry.name === "不明なユーザー" || myEntry.name === "登録済み（名前不明）" || myEntry.name !== userDisplayName);
             if (needsUpdate) {
               log("Name Sync: " + myEntry.name + " -> " + userDisplayName);
-              callGas("set_dorm_mother", { lineUserId, displayName: userDisplayName }).catch(() => {});
+              callGas("set_dorm_mother", { lineUserId, displayName: userDisplayName }).catch(() => { });
               myEntry.name = userDisplayName;
             }
           }
@@ -440,7 +465,7 @@
           for (let i = 0; i < 2; i++) {
             const user = list[i];
             const slot = slots[i];
-            
+
             if (user) {
               slot.name.innerText = user.name;
               slot.name.className = "slot-user";
@@ -469,10 +494,10 @@
         return;
       }
 
-      const confirmMsg = (action === "set_dorm_mother") 
-        ? "あなたを新しい寮母として登録しますか？" 
+      const confirmMsg = (action === "set_dorm_mother")
+        ? "あなたを新しい寮母として登録しますか？"
         : "寮母の登録を解除します。よろしいですか？";
-      
+
       if (!confirm(confirmMsg)) return;
 
       showProcessing();
@@ -497,10 +522,10 @@
 
       showProcessing();
       try {
-        const res = await callGas("replace_dorm_mother", { 
-          targetLineUserId: targetId, 
-          lineUserId: lineUserId, 
-          displayName: userDisplayName 
+        const res = await callGas("replace_dorm_mother", {
+          targetLineUserId: targetId,
+          lineUserId: lineUserId,
+          displayName: userDisplayName
         });
         if (res.success) {
           showResult("success", "✅ 交代が完了しました");
