@@ -34,9 +34,10 @@
       background: var(--bg-gradient);
       min-height: 100vh;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       padding: 16px;
+      padding-top: 5vh;
       font-size: 18px;
       line-height: 1.6;
     }
@@ -284,19 +285,18 @@
       <div id="dormSection" style="display: none;">
         <div class="info-box">
           <strong style="display:block; margin-bottom:8px;">寮母登録（通知設定）</strong>
-          下の「枠」を選んで、あなたが食数通知を受け取る寮母として登録・交代します。
         </div>
 
         <div id="slotContainer" class="slot-container">
           <!-- スロット1 -->
           <div id="slot1" class="slot">
-            <div class="slot-header"><span>1人目の枠</span><span class="slot-badge"></span></div>
+            <div class="slot-header"><span>1人目</span><span class="slot-badge"></span></div>
             <div id="slotName1" class="slot-user empty">読み込み中...</div>
             <div id="slotAction1"></div>
           </div>
           <!-- スロット2 -->
           <div id="slot2" class="slot">
-            <div class="slot-header"><span>2人目の枠</span><span class="slot-badge"></span></div>
+            <div class="slot-header"><span>2人目</span><span class="slot-badge"></span></div>
             <div id="slotName2" class="slot-user empty">読み込み中...</div>
             <div id="slotAction2"></div>
           </div>
