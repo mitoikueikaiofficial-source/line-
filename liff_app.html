@@ -317,7 +317,7 @@
     const LIFF_ID = "2009629480-rTF4dms1";
     // GASのテンプレートタグが未置換（<?= ... ?> のまま）か空の場合は予備のURLを使用する
     const rawUrl = "<?= gasUrl ?>";
-    const GAS_ENDPOINT = (rawUrl.indexOf("<?") === 0 || !rawUrl) 
+    const GAS_ENDPOINT = (rawUrl.indexOf("<?") === 0 || !rawUrl)
       ? "https://script.google.com/macros/s/AKfycbx23wbGW0ENBzcoO-D_oIYrZONNDPBZvCdzrsPch_7_ozpaArKWQG0OauxTDMUl8FHRSA/exec"
       : rawUrl;
 
@@ -368,6 +368,7 @@
       const status = document.getElementById("status");
       try {
         log("LIFF Init...");
+        log("API Endpoint: " + GAS_ENDPOINT);
         await liff.init({ liffId: LIFF_ID });
 
         if (!liff.isLoggedIn()) {
@@ -418,12 +419,17 @@
         url.searchParams.append(key, extra[key]);
       }
 
+      log("Fetching: " + action);
       try {
         const response = await fetch(url.toString(), {
           method: "GET",
           redirect: "follow"
         });
-        if (!response.ok) throw new Error("HTTP " + response.status);
+        if (!response.ok) {
+          const errText = await response.text();
+          log("HTTP Error: " + response.status + " " + errText.substring(0, 50));
+          throw new Error("HTTP " + response.status);
+        }
         return await response.json();
       } catch (err) {
         log("API Error: " + err.message);
